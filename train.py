@@ -73,6 +73,8 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
+        # print('Iter [%d/%d] Loss: %.4f' %
+        #       (i+1, len(train_dataset)//batch_size, loss.data[0]))
         if (i+1) % 100 == 0:
             print('Epoch [%d/%d], Iter [%d/%d] Loss: %.4f'
                   % (epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.data[0]))
@@ -85,11 +87,12 @@ for epoch in range(num_epochs):
 encoder.eval()
 image, label = test_dataset[5]
 image = Variable(torch.FloatTensor([image]))
+label = Variable(torch.FloatTensor([label]))
 output = encoder(image)
 
 y_layer = image.data[0].numpy()
 uv_pred = output.data[0].numpy()
-uv_label = label
+uv_label = label.data[0].numpy()
 
 img_input = y_layer[0]
 img_pred = np.concatenate((y_layer, uv_pred), axis=0)

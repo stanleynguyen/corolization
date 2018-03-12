@@ -10,11 +10,37 @@ class ResidualEncoder(nn.Module):
         super(ResidualEncoder, self).__init__()
         self.img_size = img_size
 
-        self.vgg_conv1 = nn.Conv2d(1, 3, 3, padding=1)
-        self.vgg_conv2 = nn.Conv2d(3, 64, 3, padding=1)
-        self.vgg_conv3 = nn.Conv2d(64, 128, 3, padding=1)
-        self.vgg_conv4 = nn.Conv2d(128, 256, 3, padding=1)
-        self.vgg_conv5 = nn.Conv2d(256, 512, 3, padding=1)
+        self.vgg_block1 = nn.Sequential(
+            nn.Conv2d(3, 64, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, 3, padding=1),
+            nn.ReLU()
+        )
+        self.vgg_block2 = nn.Sequential(
+            nn.Conv2d(64, 128, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+        self.vgg_block3 = nn.Sequential(
+            nn.Conv2d(128, 256, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
+        self.vgg_block4 = nn.Sequential(
+            nn.Conv2d(256, 512, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, 3, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, 3, padding=1),
+            nn.ReLU(),
+            nn.MaxPool2d(2, 2)
+        )
 
         self.enc_conv1 = nn.Conv2d(512, 256, 1)
         self.enc_bn1 = nn.BatchNorm2d(512)
@@ -38,19 +64,12 @@ class ResidualEncoder(nn.Module):
         pass
 
     def forward(self, x):
-        out = self.vgg_conv1(x)
+        out = torch.cat((x, x, x), 1)
         vgg_out1 = F.relu(out)
-        out = self.vgg_conv2(vgg_out1)
-        vgg_out2 = F.relu(out)
-        out = self.vgg_conv3(vgg_out2)
-        out = F.relu(out)
-        vgg_out3 = F.max_pool2d(out, 2)
-        out = self.vgg_conv4(vgg_out3)
-        out = F.relu(out)
-        vgg_out4 = F.max_pool2d(out, 2)
-        out = self.vgg_conv5(vgg_out4)
-        out = F.relu(out)
-        vgg_out5 = F.max_pool2d(out, 2)
+        vgg_out2 = self.vgg_block1(vgg_out1)
+        vgg_out3 = self.vgg_block2(vgg_out2)
+        vgg_out4 = self.vgg_block3(vgg_out3)
+        vgg_out5 = self.vgg_block4(vgg_out4)
 
         out = self.enc_bn1(vgg_out5)
         out = self.enc_conv1(out)
