@@ -73,11 +73,14 @@ for epoch in range(num_epochs):
         loss.backward()
         optimizer.step()
 
-        print('Iter %d/%d' % (i+1, len(train_dataset)//batch_size))
         if (i+1) % 100 == 0:
             print('Epoch [%d/%d], Iter [%d/%d] Loss: %.4f'
                   % (epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.data[0]))
-            torch.save(encoder.state_dict(), 'residual_encoder.pkl')
+
+    # lr decay
+    learning_rate /= 3
+    optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
+    torch.save(encoder.state_dict(), 'residual_encoder.pkl')
 
 encoder.eval()
 image, label = test_dataset[5]
@@ -88,13 +91,13 @@ y_layer = image.data[0].numpy()
 uv_pred = output.data[0].numpy()
 uv_label = label
 
-img_input = y_layer
+img_input = y_layer[0]
 img_pred = np.concatenate((y_layer, uv_pred), axis=0)
 img_actual = np.concatenate((y_layer, uv_label), axis=0)
 
 f, axarr = plt.subplots(1, 3)
 # axarr[0].imshow(yuv2rgb(img_input.reshape(32,32)), cmap='gray')
-axarr[0].imshow(test_dset[5][0])
+axarr[0].imshow(img_input, cmap='gray')
 axarr[1].imshow(yuv2rgb(img_pred.transpose(1, 2, 0)))
 axarr[2].imshow(yuv2rgb(img_actual.transpose(1, 2, 0)))
 plt.show()
