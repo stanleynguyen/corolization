@@ -10,16 +10,22 @@ from os.path import join, isfile
 
 
 class CIFAR10ForResEncoder(Dataset):
-    def __init__(self, root, train=True, transform=None):
+    def __init__(self, root, train=True, transform=None, color_space='yuv'):
         self.dataset = dsets.CIFAR10(root=root, train=train, download=True)
         self.transform = transform
+        self.color_space = color_space
         pass
 
     def __len__(self):
         return len(self.dataset)
 
     def __getitem__(self, index):
-        data = rgb2yuv(self.dataset[index][0])
+        img = self.dataset[index][0]
+        if self.color_space == 'lab':
+            data = rgb2lab(img)
+        else:
+            data = rgb2yuv(img)
+
         bwimg = data[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
         label = data[:, :, 1:].transpose(2, 0, 1)
