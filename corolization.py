@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from colorutils import color2bin
 
 
 class ResidualEncoder(nn.Module):
@@ -92,3 +93,21 @@ class ResidualEncoder(nn.Module):
         final_out = self.final_conv(enc_out5)
 
         return final_out
+
+class MultinomialCELoss(nn.Module):
+    def __init__(self):
+        super(MultinomialCELoss, self).__init__()
+
+    # x dim: h, w, q
+    # y dim: h, w, 2
+    # output: loss, as a float
+    def forward(self, x, y):
+    yenc = torch.zeros_like(x)      # encode labels into one-hot vectors
+    for ri, r in enumerate(y):      # should use soft encoding instead of one-hot (footnote 2 of richzhang paper)
+        for ci, c in enumerate(r):
+            bin_idx = color2bin(c)
+            yenc[ri][ci][bin_idx] = 1
+
+    zlogz = yenc * x.log()
+    loss = - zlogz.sum(0).sum(0).sum(0)
+    return loss
