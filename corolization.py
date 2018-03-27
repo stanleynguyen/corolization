@@ -99,7 +99,7 @@ class MultinomialCELoss(nn.Module):
     def __init__(self):
         super(MultinomialCELoss, self).__init__()
 
-    # x dim: n, q, h, w
+    # x dim: n, 2, h, w
     # y dim: n, 2, h, w
     # n number of cases
     # h, w height width
@@ -116,10 +116,95 @@ class MultinomialCELoss(nn.Module):
             for h in range(y.size(2)):
                 for w in range(y.size(3)):
                     pixel = y[n:n+1, :, h, w]
-                    print(pixel.data[0].numpy().shape)
                     bin_idx = color2bin(pixel.data[0].numpy())
                     yenc[n][bin_idx][h][w] = 1
 
         zlogz = yenc * x.log()
         loss = - zlogz.sum(0).sum(0).sum(0)
         return loss
+
+
+class ColorfulColorizer(nn.Module):
+    def __init__(self):
+        super(ColorfulColorizer, self).__init__()
+        kernel_size = 3
+        padding = 1
+        self.op_1 = nn.Sequential(
+            nn.Conv2d(1, 64, kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.Conv2d(64, 64, kernel_size, 2, padding=padding),
+            nn.ReLU(),
+            nn.BatchNorm2d(64),
+        )
+        self.op_2 = nn.Sequential(
+            nn.Conv2d(64, 128, kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.Conv2d(128, 128, kernel_size, 2, padding=padding),
+            nn.ReLU(),
+            nn.BatchNorm2d(128)
+        )
+        self.op_3 = nn.Sequential(
+            nn.Conv2d(128, 256, kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size, 2, padding=padding),
+            nn.ReLU(),
+            nn.BatchNorm2d(256)
+        )
+        self.op_4 = nn.Sequential(
+            nn.Conv2d(256, 512, kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=padding),
+            nn.ReLU(),
+            nn.BatchNorm2d(512)
+        )
+        self.op_5 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.ReLU(),
+            nn.BatchNorm2d(512)
+        )
+        self.op_6 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2)
+            nn.ReLU(),
+            nn.BatchNorm2d(512)
+        )
+        self.op_7 = nn.Sequential(
+            nn.Conv2d(512, 512, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(512, 512, kernel_size, padding=1)
+            nn.ReLU(),
+            nn.BatchNorm2d(512)
+        )
+        self.op_8 = nn.Sequential(
+            nn.UpsamplingBilinear2d(scale_factor=2),
+            nn.Conv2d(512, 256, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 256, kernel_size, padding=1),
+            nn.ReLU(),
+            nn.Conv2d(256, 313, kernel_size=1)
+        )
+
+        def forward(self, x):
+            out = self.op_1(x)
+            out = self.op_2(out)
+            out = self.op_3(out)
+            out = self.op_4(out)
+            out = self.op_5(out)
+            out = self.op_6(out)
+            out = self.op_7(out)
+            out = self.op_8(out)
+
+            # TODO: implement the soft encoding and convert to AB layers
