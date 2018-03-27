@@ -29,9 +29,11 @@ class CustomImages(Dataset):
 
     def __getitem__(self, idx):
         img = imread(join(self.root_dir, self.filenames[idx]))
-        img = resize(img, (256, 256))
         if self.color_space == 'lab':
             img = rgb2lab(img)
+
+        if self.transform is not None:
+            img = self.transform(img)
 
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
@@ -43,7 +45,36 @@ class CustomImages(Dataset):
                 label[binidx][h][w] = 1
         label = torch.from_numpy(label).float()
 
-        if self.transform is not None:
-            bwimg = self.transform(bwimg)
-
         return (bwimg, label)
+
+class Rescale(object):
+    """Rescale the image in a sample to a given size.
+
+    Args:
+        output_size (tuple or int): Desired output size. If tuple, output is
+            matched to output_size. If int, smaller of image edges is matched
+            to output_size keeping aspect ratio the same.
+    """
+
+    def __init__(self, output_size):
+        assert isinstance(output_size, (int, tuple))
+        self.output_size = output_size
+
+    def __call__(self, sample):
+        image = sample
+
+        h, w = image.shape[:2]
+        if isinstance(self.output_size, int):
+            if h > w:
+                new_h, new_w = self.output_size * h / w, self.output_size
+            else:
+                new_h, new_w = self.output_size, self.output_size * w / h
+        else:
+            new_h, new_w = self.output_size
+
+        new_h, new_w = int(new_h), int(new_w)
+
+        img = resize(image, (new_h, new_w))
+
+        return img
+
