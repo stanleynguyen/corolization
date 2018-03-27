@@ -127,74 +127,74 @@ class MultinomialCELoss(nn.Module):
 class ColorfulColorizer(nn.Module):
     def __init__(self):
         super(ColorfulColorizer, self).__init__()
-        kernel_size = 3
-        padding = 1
+
         self.op_1 = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size, padding=padding),
+            nn.Conv2d(1, 64, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(64, 64, kernel_size, 2, padding=padding),
+            nn.Conv2d(64, 64, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.BatchNorm2d(64),
         )
         self.op_2 = nn.Sequential(
-            nn.Conv2d(64, 128, kernel_size, padding=padding),
+            nn.Conv2d(64, 128, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(128, 128, kernel_size, 2, padding=padding),
+            nn.Conv2d(128, 128, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.BatchNorm2d(128)
         )
         self.op_3 = nn.Sequential(
-            nn.Conv2d(128, 256, kernel_size, padding=padding),
+            nn.Conv2d(128, 256, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size, 2, padding=padding),
+            nn.Conv2d(256, 256, kernel_size=3, stride=2, padding=1),
             nn.ReLU(),
             nn.BatchNorm2d(256)
         )
         self.op_4 = nn.Sequential(
-            nn.Conv2d(256, 512, kernel_size, padding=padding),
+            nn.Conv2d(256, 512, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=padding),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=padding),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.BatchNorm2d(512)
         )
         self.op_5 = nn.Sequential(
-            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2),
             nn.ReLU(),
             nn.BatchNorm2d(512)
         )
         self.op_6 = nn.Sequential(
-            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2),
+            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=2, dilation=2)
+            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2)
             nn.ReLU(),
             nn.BatchNorm2d(512)
         )
         self.op_7 = nn.Sequential(
-            nn.Conv2d(512, 512, kernel_size, padding=1),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=1),
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size, padding=1)
+            nn.Conv2d(512, 512, kernel_size=3, padding=1)
             nn.ReLU(),
             nn.BatchNorm2d(512)
         )
         self.op_8 = nn.Sequential(
             nn.UpsamplingBilinear2d(scale_factor=2),
-            nn.Conv2d(512, 256, kernel_size, padding=1),
+            nn.Conv2d(512, 256, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size, padding=1),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 256, kernel_size, padding=1),
+            nn.Conv2d(256, 256, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.Conv2d(256, 313, kernel_size=1)
+            nn.UpsamplingBilinear2d(scale_factor=4);
         )
 
         def forward(self, x):
