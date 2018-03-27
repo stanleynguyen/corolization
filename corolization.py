@@ -94,20 +94,32 @@ class ResidualEncoder(nn.Module):
 
         return final_out
 
+
 class MultinomialCELoss(nn.Module):
     def __init__(self):
         super(MultinomialCELoss, self).__init__()
 
-    # x dim: h, w, q
-    # y dim: h, w, 2
+    # x dim: n, q, h, w
+    # y dim: n, 2, h, w
+    # n number of cases
+    # h, w height width
+    # q number of bins
     # output: loss, as a float
     def forward(self, x, y):
-    yenc = torch.zeros_like(x)      # encode labels into one-hot vectors
-    for ri, r in enumerate(y):      # should use soft encoding instead of one-hot (footnote 2 of richzhang paper)
-        for ci, c in enumerate(r):
-            bin_idx = color2bin(c)
-            yenc[ri][ci][bin_idx] = 1
 
-    zlogz = yenc * x.log()
-    loss = - zlogz.sum(0).sum(0).sum(0)
-    return loss
+        # encode labels into one-hot vectors
+        yenc = torch.FloatTensor(
+            x.size(0), 21 * 21, x.size(2), x.size(3)).zero_()
+        # should use soft encoding instead of one-hot (footnote 2 of richzhang paper)
+
+        for n in range(y.size(0)):
+            for h in range(y.size(2)):
+                for w in range(y.size(3)):
+                    pixel = y[n:n+1, :, h, w]
+                    print(pixel.data[0].numpy().shape)
+                    bin_idx = color2bin(pixel.data[0].numpy())
+                    yenc[n][bin_idx][h][w] = 1
+
+        zlogz = yenc * x.log()
+        loss = - zlogz.sum(0).sum(0).sum(0)
+        return loss

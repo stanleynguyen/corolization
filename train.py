@@ -9,7 +9,7 @@ import sys
 import os
 import getopt
 
-from corolization import ResidualEncoder
+from corolization import ResidualEncoder, MultinomialCELoss
 import dataset
 
 train_dataset = dataset.CIFAR10ForResEncoder(
@@ -50,7 +50,7 @@ if 'cuda' in location:
     print('Using:', torch.cuda.get_device_name(torch.cuda.current_device()))
     encoder.cuda()
 
-criterion = nn.MSELoss()
+criterion = MultinomialCELoss()
 learning_rate = 0.001
 optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
 
