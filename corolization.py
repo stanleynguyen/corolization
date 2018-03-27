@@ -172,7 +172,7 @@ class ColorfulColorizer(nn.Module):
             nn.ReLU(),
             nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2)
+            nn.Conv2d(512, 512, kernel_size=3, padding=2, dilation=2),
             nn.ReLU(),
             nn.BatchNorm2d(512)
         )
@@ -181,7 +181,7 @@ class ColorfulColorizer(nn.Module):
             nn.ReLU(),
             nn.Conv2d(512, 512, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size=3, padding=1)
+            nn.Conv2d(512, 512, kernel_size=3, padding=1),
             nn.ReLU(),
             nn.BatchNorm2d(512)
         )
@@ -193,18 +193,18 @@ class ColorfulColorizer(nn.Module):
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 313, kernel_size=1)
-            nn.UpsamplingBilinear2d(scale_factor=4);
+            nn.Conv2d(256, 313, kernel_size=1),
+            nn.UpsamplingBilinear2d(scale_factor=4)
         )
 
-        def forward(self, x):
-            out = self.op_1(x)
-            out = self.op_2(out)
-            out = self.op_3(out)
-            out = self.op_4(out)
-            out = self.op_5(out)
-            out = self.op_6(out)
-            out = self.op_7(out)
-            out = self.op_8(out)
+    def forward(self, x):
+        out = self.op_1(x)
+        out = self.op_2(out)
+        out = self.op_3(out)
+        out = self.op_4(out)
+        out = self.op_5(out)
+        out = self.op_6(out)
+        out = self.op_7(out)
+        out = self.op_8(out)
 
-            # TODO: implement the soft encoding and convert to AB layers
+        return out

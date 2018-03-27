@@ -3,13 +3,12 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-import torch.nn.functional as F
 from skimage.color import yuv2rgb
 import sys
 import os
 import getopt
 
-from corolization import ResidualEncoder, MultinomialCELoss
+from corolization import ResidualEncoder, ColorfulColorizer
 import dataset
 
 train_dataset = dataset.CIFAR10ForResEncoder(
@@ -41,16 +40,21 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=True)
 
-encoder = ResidualEncoder(32)
-if continue_training and os.path.isfile('residual_encoder.pkl'):
+# encoder = ResidualEncoder(32)
+# if continue_training and os.path.isfile('residual_encoder.pkl'):
+#     encoder.load_state_dict(torch.load(
+#         'residual_encoder.pkl', map_location=location))
+#     print('Model loaded!')
+encoder = ColorfulColorizer()
+if continue_training and os.path.isfile('colorizer.pkl'):
     encoder.load_state_dict(torch.load(
-        'residual_encoder.pkl', map_location=location))
+        'colorizer.pkl', map_location=location))
     print('Model loaded!')
 if 'cuda' in location:
     print('Using:', torch.cuda.get_device_name(torch.cuda.current_device()))
     encoder.cuda()
 
-criterion = MultinomialCELoss()
+criterion = nn.CrossEntropyLoss()
 learning_rate = 0.001
 optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
 
@@ -79,4 +83,5 @@ for epoch in range(num_epochs):
     # lr decay
     learning_rate /= 10
     optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
-    torch.save(encoder.state_dict(), 'residual_encoder.pkl')
+    # torch.save(encoder.state_dict(), 'residual_encoder.pkl')
+    torch.save(encoder.parameters(), 'colorizer.pkl')

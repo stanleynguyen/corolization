@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import Dataset
 from skimage.color import rgb2yuv, rgb2lab
 from skimage.io import imread
+from skimage.transform import resize
 import torchvision.datasets as dsets
 from os import listdir
 from os.path import join, isfile
@@ -55,6 +56,7 @@ class CustomImages(Dataset):
 
     def __getitem__(self, idx):
         img = imread(join(self.root_dir, self.filenames[idx]))
+        img = resize(img, (256, 256))
         if self.color_space == 'lab':
             img = rgb2lab(img)
         else:
@@ -62,7 +64,12 @@ class CustomImages(Dataset):
 
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
-        label = img[:, :, 1:].transpose(2, 0, 1)
+        abimg = img[:, :, 1:].transpose(2, 0, 1)
+        label = np.zeros((313, abimg.shape[0], abimg.shape[1]))
+        for h in range(label.shape[1]):
+            for w in range(label.shape[2]):
+                binidx = color2bin(abimg[:][h][w])
+                label[binidx][h][w] = 1
         label = torch.from_numpy(label).float()
 
         if self.transform is not None:
