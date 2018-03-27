@@ -8,7 +8,7 @@ import sys
 import os
 import getopt
 
-from corolization import ResidualEncoder, ColorfulColorizer
+from corolization import ColorfulColorizer
 import dataset
 
 train_dataset = dataset.CustomImages(

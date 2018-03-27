@@ -2,7 +2,7 @@
 
 import torch
 from torch.utils.data import Dataset
-from skimage.color import rgb2yuv, rgb2lab
+from skimage.color import rgb2lab
 from skimage.io import imread
 from skimage.transform import resize
 import torchvision.datasets as dsets
@@ -10,7 +10,7 @@ from os import listdir
 from os.path import join, isfile
 
 class CustomImages(Dataset):
-    def __init__(self, root, train=True, color_space='yub', transform=None):
+    def __init__(self, root, train=True, color_space='lab', transform=None):
         """
             color_space: 'yub' or 'lab'
         """
@@ -20,6 +20,8 @@ class CustomImages(Dataset):
         self.filenames = [f for f in listdir(
             self.root_dir) if isfile(join(self.root_dir, f))]
         self.color_space = color_space
+        if (self.color_space not in ['rgb', 'lab']):
+            raise(NotImplementedError)
         self.transform = transform
 
     def __len__(self):
@@ -30,8 +32,6 @@ class CustomImages(Dataset):
         img = resize(img, (256, 256))
         if self.color_space == 'lab':
             img = rgb2lab(img)
-        else:
-            img = rgb2yuv(img)
 
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
