@@ -11,9 +11,8 @@ import getopt
 from corolization import ResidualEncoder, ColorfulColorizer
 import dataset
 
-train_dataset = dataset.CIFAR10ForResEncoder(
-    root='./data', train=True)
-
+train_dataset = dataset.CustomImages(
+    root='./SUN2012', train=True)
 
 continue_training = False
 location = 'cpu'
@@ -40,11 +39,6 @@ train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=True)
 
-# encoder = ResidualEncoder(32)
-# if continue_training and os.path.isfile('residual_encoder.pkl'):
-#     encoder.load_state_dict(torch.load(
-#         'residual_encoder.pkl', map_location=location))
-#     print('Model loaded!')
 encoder = ColorfulColorizer()
 if continue_training and os.path.isfile('colorizer.pkl'):
     encoder.load_state_dict(torch.load(

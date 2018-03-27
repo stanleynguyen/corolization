@@ -13,8 +13,8 @@ import getopt
 import dataset
 from corolization import ResidualEncoder
 
-test_dataset = dataset.CIFAR10ForResEncoder(
-    root='./data', train=False)
+test_dataset = dataset.CustomImages(
+    root='./SUN2012', train=False)
 
 batch_size = 100
 location = 'cpu'
