@@ -7,7 +7,7 @@ import numpy as np
 
 def color2bin(data):
     a, b = data
-    return (round(a/10)+10)*21 + round(b/10)+10
+    return int((round(a/10)+10)*21 + round(b/10)+10)
 
 
 def bin2color(idx):
