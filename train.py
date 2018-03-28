@@ -48,7 +48,7 @@ if 'cuda' in location:
     print('Using:', torch.cuda.get_device_name(torch.cuda.current_device()))
     encoder.cuda()
 
-criterion = nn.CrossEntropyLoss()
+criterion = MultinomialCELoss()
 learning_rate = 0.001
 optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
 
@@ -64,7 +64,7 @@ for epoch in range(num_epochs):
         # Forward + Backward + Optimize
         optimizer.zero_grad()
         outputs = encoder(images)
-        loss = criterion(outputs, labels.long())
+        loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 

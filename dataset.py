@@ -40,13 +40,13 @@ class CustomImages(Dataset):
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
         abimg = img[:, :, 1:].transpose(2, 0, 1)
-        label = np.zeros((1, abimg.shape[1], abimg.shape[2]))
+        label = np.zeros((441, abimg.shape[1], abimg.shape[2]))
         for h in range(label.shape[1]):
             for w in range(label.shape[2]):
                 binidx = color2bin(abimg[:, h, w])
-                label[0,h,w] = binidx
+                label[binidx,h,w] = 1
         label = torch.from_numpy(label).float()
-        label = label.view(-1)
+        # label = label.view(-1)
         return (bwimg, label)
 
 class Rescale(object):

@@ -9,15 +9,16 @@ class MultinomialCELoss(nn.Module):
     def __init__(self):
         super(MultinomialCELoss, self).__init__()
 
-    # x dim: n, 2, h, w
-    # y dim: n, 2, h, w
+    # x dim: n, q, h, w
+    # y dim: n, q, h, w
     # n number of cases
     # h, w height width
     # q number of bins
     # output: loss, as a float
     def forward(self, x, y):
-        zlogz = y * x.log()
-        loss = - zlogz.sum(0).sum(0).sum(0)
+        x = F.log_softmax(x, dim=1)
+        zlogz = y*x
+        loss = - zlogz.sum()
         return loss
 
 
@@ -103,5 +104,5 @@ class ColorfulColorizer(nn.Module):
         out = self.op_6(out)
         out = self.op_7(out)
         out = self.op_8(out)
-        out = out.view(out.size()[0], out.size()[1],-1)
+        # out = out.view(out.size()[0], out.size()[1],-1)
         return out
