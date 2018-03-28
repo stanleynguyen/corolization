@@ -8,6 +8,8 @@ from skimage.transform import resize
 import torchvision.datasets as dsets
 from os import listdir
 from os.path import join, isfile
+import numpy as np
+from colorutils import color2bin
 
 class CustomImages(Dataset):
     def __init__(self, root, train=True, color_space='lab', transform=None):
@@ -38,13 +40,13 @@ class CustomImages(Dataset):
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
         abimg = img[:, :, 1:].transpose(2, 0, 1)
-        label = np.zeros((313, abimg.shape[0], abimg.shape[1]))
+        label = np.zeros((1, abimg.shape[1], abimg.shape[2]))
         for h in range(label.shape[1]):
             for w in range(label.shape[2]):
-                binidx = color2bin(abimg[:][h][w])
-                label[binidx][h][w] = 1
+                binidx = color2bin(abimg[:, h, w])
+                label[0,h,w] = binidx
         label = torch.from_numpy(label).float()
-
+        label = label.view(-1)
         return (bwimg, label)
 
 class Rescale(object):

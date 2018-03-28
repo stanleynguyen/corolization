@@ -8,7 +8,7 @@ import sys
 import os
 import getopt
 
-from corolization import ColorfulColorizer
+from corolization import ColorfulColorizer, MultinomialCELoss
 import dataset
 
 train_dataset = dataset.CustomImages(
@@ -32,7 +32,7 @@ for opt, arg in opts:
     elif opt in ('-c', '--continue'):
         continue_training = True
 
-batch_size = 100
+batch_size = 4
 num_epochs = 3
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
@@ -64,7 +64,7 @@ for epoch in range(num_epochs):
         # Forward + Backward + Optimize
         optimizer.zero_grad()
         outputs = encoder(images)
-        loss = criterion(outputs, labels)
+        loss = criterion(outputs, labels.long())
         loss.backward()
         optimizer.step()
 
@@ -77,5 +77,4 @@ for epoch in range(num_epochs):
     # lr decay
     learning_rate /= 10
     optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
-    # torch.save(encoder.state_dict(), 'residual_encoder.pkl')
-    torch.save(encoder.parameters(), 'colorizer.pkl')
+    torch.save(encoder.state_dict(), 'colorizer.pkl')

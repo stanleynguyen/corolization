@@ -16,20 +16,7 @@ class MultinomialCELoss(nn.Module):
     # q number of bins
     # output: loss, as a float
     def forward(self, x, y):
-
-        # encode labels into one-hot vectors
-        yenc = torch.FloatTensor(
-            x.size(0), 21 * 21, x.size(2), x.size(3)).zero_()
-        # should use soft encoding instead of one-hot (footnote 2 of richzhang paper)
-
-        for n in range(y.size(0)):
-            for h in range(y.size(2)):
-                for w in range(y.size(3)):
-                    pixel = y[n:n+1, :, h, w]
-                    bin_idx = color2bin(pixel.data[0].numpy())
-                    yenc[n][bin_idx][h][w] = 1
-
-        zlogz = yenc * x.log()
+        zlogz = y * x.log()
         loss = - zlogz.sum(0).sum(0).sum(0)
         return loss
 
@@ -103,7 +90,7 @@ class ColorfulColorizer(nn.Module):
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 313, kernel_size=1),
+            nn.Conv2d(256, 21*21, kernel_size=1),
             nn.UpsamplingBilinear2d(scale_factor=4)
         )
 
@@ -116,5 +103,5 @@ class ColorfulColorizer(nn.Module):
         out = self.op_6(out)
         out = self.op_7(out)
         out = self.op_8(out)
-
+        out = out.view(out.size()[0], out.size()[1],-1)
         return out
