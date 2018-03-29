@@ -39,6 +39,8 @@ class CustomImages(Dataset):
 
     def __getitem__(self, idx):
         img = imread(self.filenames[idx])
+        if img.shape[2] > 3:
+            img = img[:,:,:3]
         if self.color_space == 'lab':
             img = rgb2lab(img)
 
