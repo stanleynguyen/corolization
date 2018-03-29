@@ -12,7 +12,7 @@ from corolization import ColorfulColorizer, MultinomialCELoss
 import dataset
 
 train_dataset = dataset.CustomImages(
-    root='./SUN2012', transform=dataset.Rescale((256,256)), train=True)
+    root='./SUN2012', transform=dataset.Rescale((256, 256)), train=True)
 
 continue_training = False
 location = 'cpu'
