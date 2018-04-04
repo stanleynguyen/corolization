@@ -8,28 +8,31 @@ import os
 
 
 class NNEncode():
-    def __init__(self, NN=5, sigma=5, km_filepath=os.path.join(os.sep, 'static', 'pts_in_hull.npy')):
+    def __init__(self, NN=5, sigma=5, km_filepath=os.curdir + os.path.join(os.sep, 'static', 'pts_in_hull.npy')):
         self.cc = np.load(km_filepath)
         self.NN = int(NN)
         self.sigma = sigma
         self.nbrs = nn.NearestNeighbors(n_neighbors=NN, algorithm='ball_tree').fit(self.cc)
 
-    def imgEncode(abimg):
-        label = np.zeros((441, abimg.shape[1], abimg.shape[2]))
+    def imgEncode(self, abimg):
+        label = np.zeros((313, abimg.shape[1], abimg.shape[2]))
         for h in range(label.shape[1]):
             for w in range(label.shape[2]):
-                (dists,inds) = self.nbrs.kneighbors(abimg[:, h, w], self.NN)
+                (dists,inds) = self.nbrs.kneighbors(abimg[np.newaxis, :, h, w], self.NN)
+                dists = dists[0]
+                inds = inds[0]
 
                 wts = np.exp(-dists**2/(2*self.sigma**2))
-                wts = wts/np.sum(wts,axis=1)[:,np.newaxis]
-                
+                wts = wts/np.sum(wts)
+
+                # shape of dists, inds and wts is (5,)
                 for i in range(5):
                     label[inds[i], h, w] = wts[i]
 
         return label
 
 
-    def bin2color(idx):
+    def bin2color(self, idx):
         return self.cc[idx]
 
 

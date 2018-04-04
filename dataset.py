@@ -9,7 +9,7 @@ import torchvision.datasets as dsets
 from os import listdir, walk
 from os.path import join, isfile, isdir
 import numpy as np
-from colorutils import color2bin
+from colorutils import NNEncode
 from sklearn.model_selection import train_test_split
 
 
@@ -40,6 +40,7 @@ class CustomImages(Dataset):
         if (self.color_space not in ['rgb', 'lab']):
             raise(NotImplementedError)
         self.transform = transform
+        self.nnenc = NNEncode()
 
     def __len__(self):
         return len(self.filenames)
@@ -54,8 +55,8 @@ class CustomImages(Dataset):
 
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
-        abimg = img[:, :, 1:].transpose(2, 0, 1)
-        label = NNEncode().imgEncode(abimg)
+        abimg = img[:, :, 1:].transpose(2, 0, 1)    # abimg dim: 2, h, w
+        label = self.nnenc.imgEncode(abimg)
         label = torch.from_numpy(label).float()
         # label = label.view(-1)
         abimg = torch.from_numpy(abimg).float()

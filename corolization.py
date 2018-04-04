@@ -99,7 +99,7 @@ class ColorfulColorizer(nn.Module):
             nn.ReLU(),
             nn.Conv2d(256, 256, kernel_size=3, padding=1),
             nn.ReLU(),
-            nn.Conv2d(256, 21*21, kernel_size=1),
+            nn.Conv2d(256, 313, kernel_size=1),
             nn.UpsamplingBilinear2d(scale_factor=4)
         )
 
