@@ -12,8 +12,8 @@ def color2bin(data):
 
 def bin2color(idx):
     b = (idx % 21 - 10)*10
-    a = (int(idx/21) - 10)*10
-    return (a, b)
+    a = (np.floor(idx/21) - 10)*10
+    return a, b
 
 
 # for finding the distribution of values of L, a, b in the dataset
