@@ -9,7 +9,7 @@ from skimage.color import lab2rgb
 from torch.autograd import Variable
 import matplotlib.pyplot as plt
 import getopt
-from colorutils import bin2color
+from colorutils import NNEncode
 
 import dataset
 from corolization import ColorfulColorizer
@@ -76,34 +76,31 @@ for c in test_cases:
 f, axarr = plt.subplots(len(test_cases), 3)
 
 T = 0.38
-bin_index = np.arange(441)
-a, b = bin2color(bin_index)
-a = torch.FloatTensor(a).cuda()
-b = torch.FloatTensor(b).cuda()
+q = 313  # number of colours
+nnenc = NNEncode()
+bin_index = np.arange(q)
+ab_list = nnenc.bin2color(bin_index)   # q, 2
 
 for i in range(len(test_cases)):
-    l_layer = images[i].data[0]
-    bin_probabilities = outputs[i].data[0]
-    ab_label = labels[i].data
+    l_layer = images[i].data[0].numpy()
+    bin_probabilities = outputs[i].data[0].numpy()  # bin_probabilities dim: q, h, w
+    ab_label = labels[i].data.numpy()
+
     # convert bin_probab -> ab_pred
-    # 441,256,256
-    bin_probabilities = torch.exp(torch.log(bin_probabilities)/T)
+    bin_probabilities = np.exp(np.log(bin_probabilities)/T)
     bin_sum = bin_probabilities.sum(0)
-    bin_sum = bin_sum.view(1, bin_sum.shape[0], bin_sum.shape[1])
+    bin_sum = bin_sum.reshape((1, bin_sum.shape[0], bin_sum.shape[1]))
     bin_probabilities /= bin_sum
 
-    a_layer = (bin_probabilities * a.view(a.shape[0],1,1)).sum(0)
-    b_layer = (bin_probabilities * b.view(b.shape[0],1,1)).sum(0)
-    a_layer = a_layer.view(1, a_layer.shape[0], a_layer.shape[1])
-    b_layer = b_layer.view(1, b_layer.shape[0], b_layer.shape[1])
+    # ab_pred dim: 2, h, w
+    ab_pred = (bin_probabilities[:, np.newaxis, :, :] * ab_list[:, :, np.newaxis, np.newaxis]).sum(0)
+
     img_input = l_layer[0]
 
-    img_pred = torch.cat((l_layer, a_layer, b_layer), dim=0)
-    img_actual = torch.cat((l_layer, ab_label), dim=0)
+    img_pred = np.concatenate((l_layer, ab_pred), axis=0)
+    img_actual = np.concatenate((l_layer, ab_label), axis=0)
 
     axarr[i][0].imshow(img_input, cmap='gray')
-    img_pred = img_pred.cpu().numpy().astype('float64')
-    img_actual = img_actual.cpu().numpy().astype('float64')
     axarr[i][1].imshow(lab2rgb(img_pred.transpose(1, 2, 0)))
     axarr[i][2].imshow(lab2rgb(img_actual.transpose(1, 2, 0)))
 plt.show()
