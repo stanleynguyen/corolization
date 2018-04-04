@@ -12,7 +12,7 @@ from corolization import ColorfulColorizer, MultinomialCELoss
 import dataset
 
 train_dataset = dataset.CustomImages(
-    root='./SUN2012', train=True)
+    root='./SUN2012', train=False)
 
 continue_training = False
 location = 'cpu'
@@ -32,7 +32,7 @@ for opt, arg in opts:
     elif opt in ('-c', '--continue'):
         continue_training = True
 
-batch_size = 4
+batch_size = 8
 num_epochs = 3
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
@@ -49,11 +49,11 @@ if 'cuda' in location:
     encoder.cuda()
 
 criterion = MultinomialCELoss()
-learning_rate = 0.001
+learning_rate = 0.1
 optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
 
 for epoch in range(num_epochs):
-    for i, (images, labels) in enumerate(train_loader):
+    for i, (images, labels, _) in enumerate(train_loader):
         images = Variable(images)
         labels = Variable(labels)
 

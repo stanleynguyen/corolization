@@ -17,16 +17,15 @@ class MultinomialCELoss(nn.Module):
     # q number of bins
     # output: loss, as a float
     def forward(self, x, y):
-        # pdb.set_trace()
-        # x = F.log_softmax(x, dim=1)
-        x = torch.exp(x)
-        x_sum = x.sum(1)
-        x_sum = x_sum.view(x_sum.shape[0],1,x_sum.shape[1],x_sum.shape[2])
-        x = x / x_sum
+        # softmax 
+        # x = torch.exp(x)
+        # x_sum = x.sum(1)
+        # x_sum = x_sum.view(x_sum.shape[0],1,x_sum.shape[1],x_sum.shape[2])
+        # x = x / x_sum
         x = torch.log(x)
         zlogz = y*x
         loss = - zlogz.sum()
-        loss /= (x_sum.shape[0] * x_sum.shape[2] * x_sum.shape[3])
+        loss /= (x.shape[0] * x.shape[2] * x.shape[3])
         return loss
 
 
@@ -103,6 +102,10 @@ class ColorfulColorizer(nn.Module):
             nn.UpsamplingBilinear2d(scale_factor=4)
         )
 
+        self.op_9 = nn.Sequential(
+            nn.Softmax(dim=1)
+        )
+
     def forward(self, x):
         out = self.op_1(x)
         out = self.op_2(out)
@@ -112,5 +115,6 @@ class ColorfulColorizer(nn.Module):
         out = self.op_6(out)
         out = self.op_7(out)
         out = self.op_8(out)
+        out = self.op_9(out)
         # out = out.view(out.size()[0], out.size()[1],-1)
         return out

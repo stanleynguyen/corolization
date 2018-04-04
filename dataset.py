@@ -26,7 +26,7 @@ class CustomImages(Dataset):
                     all_files.append(join(r, f))
 
         train_files, test_files = train_test_split(
-            all_files, test_size=0.1, random_state=69)
+            all_files, test_size=0.01, random_state=69)
         self.filenames = train_files if train == True else test_files
 
         self.color_space = color_space
@@ -55,7 +55,8 @@ class CustomImages(Dataset):
                 label[binidx, h, w] = 1
         label = torch.from_numpy(label).float()
         # label = label.view(-1)
-        return (bwimg, label)
+        abimg = torch.from_numpy(abimg).float()
+        return (bwimg, label, abimg)
 
 
 class Rescale(object):
