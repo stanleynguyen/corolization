@@ -14,7 +14,7 @@ from sklearn.model_selection import train_test_split
 
 
 class CustomImages(Dataset):
-    def __init__(self, root, train=True, color_space='lab', transform=None):
+    def __init__(self, root, train=True, val=False, color_space='lab', transform=None):
         """
             color_space: 'yub' or 'lab'
         """
@@ -25,9 +25,16 @@ class CustomImages(Dataset):
                 if f.endswith('.jpg'):
                     all_files.append(join(r, f))
 
-        train_files, test_files = train_test_split(
-            all_files, test_size=0.01, random_state=69)
-        self.filenames = train_files if train == True else test_files
+        train_val_files, test_files = train_test_split(
+            all_files, test_size=0.1, random_state=69)
+        train_files, val_files = train_test_split(train_val_files,
+                test_size=0.1, random_state=69)
+        if (train and val):
+            self.filenames = val_files
+        elif train:
+            self.filenames = train_files
+        else:
+            self.filenames = test_files
 
         self.color_space = color_space
         if (self.color_space not in ['rgb', 'lab']):
