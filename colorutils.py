@@ -1,19 +1,36 @@
 from skimage.color import rgb2yuv, rgb2lab
 import torchvision.datasets as dsets
 import numpy as np
+import sklearn.neighbors as nn
+import os
 
 # compute index of colour bin
 
 
-def color2bin(data):
-    a, b = data
-    return int((round(a/10)+10)*21 + round(b/10)+10)
+class NNEncode():
+    def __init__(self, NN=5, sigma=5, km_filepath=os.path.join(os.sep, 'static', 'pts_in_hull.npy')):
+        self.cc = np.load(km_filepath)
+        self.NN = int(NN)
+        self.sigma = sigma
+        self.nbrs = nn.NearestNeighbors(n_neighbors=NN, algorithm='ball_tree').fit(self.cc)
+
+    def imgEncode(abimg):
+        label = np.zeros((441, abimg.shape[1], abimg.shape[2]))
+        for h in range(label.shape[1]):
+            for w in range(label.shape[2]):
+                (dists,inds) = self.nbrs.kneighbors(abimg[:, h, w], self.NN)
+
+                wts = np.exp(-dists**2/(2*self.sigma**2))
+                wts = wts/np.sum(wts,axis=1)[:,np.newaxis]
+                
+                for i in range(5):
+                    label[inds[i], h, w] = wts[i]
+
+        return label
 
 
-def bin2color(idx):
-    b = (idx % 21 - 10)*10
-    a = (np.floor(idx/21) - 10)*10
-    return a, b
+    def bin2color(idx):
+        return self.cc[idx]
 
 
 # for finding the distribution of values of L, a, b in the dataset
