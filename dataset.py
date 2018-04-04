@@ -26,7 +26,7 @@ class CustomImages(Dataset):
                     all_files.append(join(r, f))
 
         train_val_files, test_files = train_test_split(
-            all_files, test_size=0.1, random_state=69)
+            all_files, test_size=0.99, random_state=69)
         train_files, val_files = train_test_split(train_val_files,
                 test_size=0.1, random_state=69)
         if (train and val):
@@ -41,6 +41,7 @@ class CustomImages(Dataset):
             raise(NotImplementedError)
         self.transform = transform
         self.nnenc = NNEncode()
+        self.train = train
 
     def __len__(self):
         return len(self.filenames)
@@ -56,8 +57,10 @@ class CustomImages(Dataset):
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
         abimg = img[:, :, 1:].transpose(2, 0, 1)    # abimg dim: 2, h, w
-        label = self.nnenc.imgEncode(abimg)
-        label = torch.from_numpy(label).float()
+        label = -1
+        if (self.train):
+            label = self.nnenc.imgEncode(abimg)
+            label = torch.from_numpy(label).float()
         # label = label.view(-1)
         abimg = torch.from_numpy(abimg).float()
         return (bwimg, label, abimg)

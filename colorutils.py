@@ -3,7 +3,7 @@ import torchvision.datasets as dsets
 import numpy as np
 import sklearn.neighbors as nn
 import os
-
+import pdb
 # compute index of colour bin
 
 
@@ -15,20 +15,17 @@ class NNEncode():
         self.nbrs = nn.NearestNeighbors(n_neighbors=NN, algorithm='ball_tree').fit(self.cc)
 
     def imgEncode(self, abimg):
-        label = np.zeros((313, abimg.shape[1], abimg.shape[2]))
-        for h in range(label.shape[1]):
-            for w in range(label.shape[2]):
-                (dists,inds) = self.nbrs.kneighbors(abimg[np.newaxis, :, h, w], self.NN)
-                dists = dists[0]
-                inds = inds[0]
+        label = np.zeros((abimg.shape[1]*abimg.shape[2],313))
 
-                wts = np.exp(-dists**2/(2*self.sigma**2))
-                wts = wts/np.sum(wts)
+        (dists,indexes) = self.nbrs.kneighbors(abimg.reshape(abimg.shape[0],-1).transpose(), self.NN)
 
-                # shape of dists, inds and wts is (5,)
-                for i in range(5):
-                    label[inds[i], h, w] = wts[i]
+        weights = np.exp(-dists**2/(2*self.sigma**2))
+        weights = weights/np.sum(weights,axis=1).reshape(-1,1)
 
+        pixel_indexes = np.arange(0,abimg.shape[1]*abimg.shape[2],dtype='int')[:,np.newaxis]
+        label[pixel_indexes, indexes] = weights
+
+        label = label.transpose().reshape(313,abimg.shape[1],abimg.shape[2])
         return label
 
 

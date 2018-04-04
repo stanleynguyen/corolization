@@ -39,8 +39,8 @@ for opt, arg in opts:
         continue_training = True
 
 batch_size = 8
-num_epochs = 3
-print_freq = 10
+num_epochs = 1
+print_freq = 1
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,

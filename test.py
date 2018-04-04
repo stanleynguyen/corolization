@@ -61,6 +61,7 @@ images = []
 labels = []
 print(test_cases)
 for c in test_cases:
+    print('encoding ', c)
     image,_, label = test_dataset[c]
     image = Variable(torch.from_numpy(np.array([image.numpy()])))
     label = Variable(label)
@@ -79,12 +80,14 @@ T = 0.38
 q = 313  # number of colours
 nnenc = NNEncode()
 bin_index = np.arange(q)
+print('getting ab_list')
 ab_list = nnenc.bin2color(bin_index)   # q, 2
 
 for i in range(len(test_cases)):
-    l_layer = images[i].data[0].numpy()
-    bin_probabilities = outputs[i].data[0].numpy()  # bin_probabilities dim: q, h, w
-    ab_label = labels[i].data.numpy()
+    print('plotting img ', i)
+    l_layer = images[i].data[0].cpu().numpy()
+    bin_probabilities = outputs[i].data[0].cpu().numpy()  # bin_probabilities dim: q, h, w
+    ab_label = labels[i].data.cpu().numpy().astype('float64')
 
     # convert bin_probab -> ab_pred
     bin_probabilities = np.exp(np.log(bin_probabilities)/T)
