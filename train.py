@@ -1,5 +1,7 @@
 # pylint: disable-all
 
+import time
+
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
@@ -12,7 +14,11 @@ from corolization import ColorfulColorizer, MultinomialCELoss
 import dataset
 
 train_dataset = dataset.CustomImages(
-    root='./SUN2012', train=False)
+    root='./SUN2012', train=True)
+
+val_dataset = dataset.CustomImages(
+    root='./SUN2012', train=True, val=True)
+
 
 continue_training = False
 location = 'cpu'
@@ -34,47 +40,148 @@ for opt, arg in opts:
 
 batch_size = 8
 num_epochs = 3
+print_freq = 10
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=True)
 
+test_loader = torch.utils.data.DataLoader(dataset=val_dataset,
+                                           batch_size=batch_size,
+                                           shuffle=True)
+
 encoder = ColorfulColorizer()
-if continue_training and os.path.isfile('colorizer.pkl'):
-    encoder.load_state_dict(torch.load(
-        'colorizer.pkl', map_location=location))
-    print('Model loaded!')
+criterion = MultinomialCELoss()
+
+# if continue_training and os.path.isfile('colorizer.pkl'):
+#     encoder.load_state_dict(torch.load(
+#         'colorizer.pkl', map_location=location))
+#     print('Model loaded!')
+
+
 if 'cuda' in location:
     print('Using:', torch.cuda.get_device_name(torch.cuda.current_device()))
     encoder.cuda()
+    criterion.cuda()
 
-criterion = MultinomialCELoss()
 learning_rate = 0.1
-optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
+optimizer = torch.optim.SGD(encoder.parameters(),
+                            lr=learning_rate,
+                            momentum=0.9,
+                            weight_decay=1e-4)
 
-for epoch in range(num_epochs):
-    for i, (images, labels, _) in enumerate(train_loader):
-        images = Variable(images)
-        labels = Variable(labels)
+best_loss = 100
+
+def main():
+    for epoch in range(num_epochs):
+        # train for one epoch
+        train(train_loader, encoder, criterion, optimizer, epoch)
+
+        # evaluate on validation set
+        val_loss = validate(val_loader, encoder, criterion)
+        is_best = loss < best_loss
+        torch.save(encoder.state_dict(), is_best)
+
+def save_checkpoint(state, is_best=False, filename='colorizer.pkl'):
+    torch.save(state, filename)
+    if is_best:
+        torch.save(state, 'best_model.pkl')
+
+def train(train_loader, model, criterion, optimizer, epoch):
+    batch_time = AverageMeter()
+    data_time = AverageMeter()
+    losses = AverageMeter()
+
+    # switch to train mode
+    model.train()
+
+    end = time.time()
+    for i, (image, target, _) in enumerate(train_loader):
+        # measure data loading time
+        data_time.update(time.time() - end)
+
+        image_var = Variable(image)
+        target_var = Variable(target)
 
         if 'cuda' in location:
-            images = images.cuda()
-            labels = labels.cuda()
+            image_var = image_var.cuda()
+            target_var = target_var.cuda()
 
-        # Forward + Backward + Optimize
+        # compute output
+        output = model(image_var)
+        loss = criterion(output, target_var)
+        losses.update(loss.data[0], image.size(0))
+
+        # compute gradient and do SGD step
         optimizer.zero_grad()
-        outputs = encoder(images)
-        loss = criterion(outputs, labels)
         loss.backward()
         optimizer.step()
 
-        print('Iter [%d/%d] Loss: %.4f' %
-              (i+1, len(train_dataset)//batch_size, loss.data[0]))
-        if (i+1) % 100 == 0:
-            print('Epoch [%d/%d], Iter [%d/%d] Loss: %.4f'
-                  % (epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, loss.data[0]))
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
 
-    # lr decay
-    learning_rate /= 10
-    optimizer = torch.optim.SGD(encoder.parameters(), lr=learning_rate)
-    torch.save(encoder.state_dict(), 'colorizer.pkl')
+        if i % print_freq == 0:
+            print('Epoch: [{0}][{1}/{2}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                  .format(
+                   epoch, i, len(train_loader), batch_time=batch_time,
+                    data_time=data_time, loss=losses))
+
+def validate(val_loader, model, criterion):
+    batch_time = AverageMeter()
+    losses = AverageMeter()
+
+    # switch to evaluate mode
+    model.eval()
+
+    end = time.time()
+    for i, (image, target) in enumerate(val_loader):
+        image_var = Variable(image)
+        target_var = Variable(target)
+
+        if 'cuda' in location:
+            image_var = image_var.cuda()
+            target_var = target_var.cuda()
+
+        # compute output
+        output = model(image_var)
+        loss = criterion(output, target_var)
+        losses.update(loss.data[0], image.size(0))
+
+        # measure elapsed time
+        batch_time.update(time.time() - end)
+        end = time.time()
+
+        if i % print_freq == 0:
+            print('Test: [{0}/{1}]\t'
+                  'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                  'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
+                   i, len(val_loader), batch_time=batch_time, loss=losses))
+
+    print(' * Val Loss {loss.avg:.3f} Prec@5 {top5.avg:.3f}'
+          .format(loss=losses))
+
+    return loss
+
+class AverageMeter(object):
+    """Computes and stores the average and current value"""
+    def __init__(self):
+        self.reset()
+
+    def reset(self):
+        self.val = 0
+        self.avg = 0
+        self.sum = 0
+        self.count = 0
+
+    def update(self, val, n=1):
+        self.val = val
+        self.sum += val * n
+        self.count += n
+        self.avg = self.sum / self.count
+
+if __name__ == '__main__':
+    main()
