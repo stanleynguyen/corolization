@@ -4,7 +4,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from colorutils import color2bin
-import pdb
+
+EPSILON = 1e-8
 
 class MultinomialCELoss(nn.Module):
     def __init__(self):
@@ -22,7 +23,7 @@ class MultinomialCELoss(nn.Module):
         # x_sum = x.sum(1)
         # x_sum = x_sum.view(x_sum.shape[0],1,x_sum.shape[1],x_sum.shape[2])
         # x = x / x_sum
-        x = torch.log(x)
+        x = torch.log(x+EPSILON)
         zlogz = y*x
         loss = - zlogz.sum()
         loss /= (x.shape[0] * x.shape[2] * x.shape[3])
