@@ -4,6 +4,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from colorutils import color2bin
+import pdb
 
 class MultinomialCELoss(nn.Module):
     def __init__(self):
@@ -16,9 +17,16 @@ class MultinomialCELoss(nn.Module):
     # q number of bins
     # output: loss, as a float
     def forward(self, x, y):
-        x = F.log_softmax(x, dim=1)
+        # pdb.set_trace()
+        # x = F.log_softmax(x, dim=1)
+        x = torch.exp(x)
+        x_sum = x.sum(1)
+        x_sum = x_sum.view(x_sum.shape[0],1,x_sum.shape[1],x_sum.shape[2])
+        x = x / x_sum
+        x = torch.log(x)
         zlogz = y*x
         loss = - zlogz.sum()
+        loss /= (x_sum.shape[0] * x_sum.shape[2] * x_sum.shape[3])
         return loss
 
 
