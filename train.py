@@ -64,11 +64,13 @@ if 'cuda' in location:
     encoder.cuda()
     criterion.cuda()
 
-learning_rate = 0.1
 optimizer = torch.optim.SGD(encoder.parameters(),
-                            lr=learning_rate,
+                            lr=0.1,
                             momentum=0.9,
                             weight_decay=1e-4)
+
+scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
+        patience=5, verbose=True)
 
 best_loss = 100
 
@@ -79,6 +81,8 @@ def main():
 
         # evaluate on validation set
         val_loss = validate(val_loader, encoder, criterion)
+
+        scheduler.step(val_loss)
         is_best = loss < best_loss
         torch.save(encoder.state_dict(), is_best)
 
