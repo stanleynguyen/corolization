@@ -38,15 +38,15 @@ for opt, arg in opts:
     elif opt in ('-c', '--continue'):
         continue_training = True
 
-batch_size = 8
-num_epochs = 1
-print_freq = 1
+batch_size = 12
+num_epochs = 100
+print_freq = 100
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
                                            shuffle=True)
 
-test_loader = torch.utils.data.DataLoader(dataset=val_dataset,
+val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
                                            batch_size=batch_size,
                                            shuffle=True)
 
@@ -73,6 +73,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
         patience=5, verbose=True)
 
 best_loss = 100
+p = 5
 
 def main():
     for epoch in range(num_epochs):
@@ -84,6 +85,12 @@ def main():
 
         scheduler.step(val_loss)
         is_best = loss < best_loss
+        if is_best:
+            p = 5
+        else:
+            p -= 1
+        if p == 0:
+            learning_rate /= 10
         torch.save(encoder.state_dict(), is_best)
 
 def save_checkpoint(state, is_best=False, filename='colorizer.pkl'):
@@ -126,12 +133,12 @@ def train(train_loader, model, criterion, optimizer, epoch):
         end = time.time()
 
         if i % print_freq == 0:
-            print('Epoch: [{0}][{1}/{2}]\t'
+            print('Epoch: [{0}/{1}][{2}/{3}]\t'
                   'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
                   'Data {data_time.val:.3f} ({data_time.avg:.3f})\t'
                   'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
                   .format(
-                   epoch, i, len(train_loader), batch_time=batch_time,
+                   epoch, num_epochs, i, len(train_loader), batch_time=batch_time,
                     data_time=data_time, loss=losses))
 
 def validate(val_loader, model, criterion):
@@ -142,7 +149,7 @@ def validate(val_loader, model, criterion):
     model.eval()
 
     end = time.time()
-    for i, (image, target) in enumerate(val_loader):
+    for i, (image, target, _) in enumerate(val_loader):
         image_var = Variable(image)
         target_var = Variable(target)
 

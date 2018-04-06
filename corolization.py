@@ -3,7 +3,6 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from colorutils import color2bin
 
 EPSILON = 1e-8
 
