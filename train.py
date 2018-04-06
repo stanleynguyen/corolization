@@ -83,15 +83,9 @@ def main():
         # evaluate on validation set
         val_loss = validate(val_loader, encoder, criterion)
 
-        scheduler.step(val_loss)
-        is_best = loss < best_loss
-        if is_best:
-            p = 5
-        else:
-            p -= 1
-        if p == 0:
-            learning_rate /= 10
-        torch.save(encoder.state_dict(), is_best)
+        scheduler.step(val_loss.cpu().data.numpy())
+        is_best = val_loss.cpu().data.numpy() < best_loss
+        save_checkpoint(encoder.state_dict(), is_best)
 
 def save_checkpoint(state, is_best=False, filename='colorizer.pkl'):
     torch.save(state, filename)
@@ -172,7 +166,7 @@ def validate(val_loader, model, criterion):
                   'Loss {loss.val:.4f} ({loss.avg:.4f})'.format(
                    i, len(val_loader), batch_time=batch_time, loss=losses))
 
-    print(' * Val Loss {loss.avg:.3f} Prec@5 {top5.avg:.3f}'
+    print(' * Val Loss {loss.avg:.3f}'
           .format(loss=losses))
 
     return loss
