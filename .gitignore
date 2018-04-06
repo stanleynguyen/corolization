@@ -3,6 +3,10 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+# ML datasets / models
+SUN2012/
+*.pkl
+
 # C extensions
 *.so
 
