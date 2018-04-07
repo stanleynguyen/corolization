@@ -38,7 +38,7 @@ for opt, arg in opts:
     elif opt in ('-c', '--continue'):
         continue_training = True
 
-batch_size = 12
+batch_size = 8
 num_epochs = 100
 print_freq = 100
 
@@ -72,20 +72,25 @@ optimizer = torch.optim.SGD(encoder.parameters(),
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
         patience=5, verbose=True)
 
-best_loss = 100
-p = 5
-
 def main():
+    best_loss = 100
+    
     for epoch in range(num_epochs):
         # train for one epoch
         train(train_loader, encoder, criterion, optimizer, epoch)
+
+        save_checkpoint(encoder.state_dict())
 
         # evaluate on validation set
         val_loss = validate(val_loader, encoder, criterion)
 
         scheduler.step(val_loss.cpu().data.numpy())
         is_best = val_loss.cpu().data.numpy() < best_loss
-        save_checkpoint(encoder.state_dict(), is_best)
+
+        if is_best:
+            print('new best validation')
+            best_loss = val_loss.cpu().data.numpy()
+            save_checkpoint(encoder.state_dict(), is_best)
 
 def save_checkpoint(state, is_best=False, filename='colorizer.pkl'):
     torch.save(state, filename)
