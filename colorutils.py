@@ -1,9 +1,11 @@
 from skimage.color import rgb2yuv, rgb2lab
+
+import torch
 import torchvision.datasets as dsets
 import numpy as np
 import sklearn.neighbors as nn
 import os
-import pdb
+
 # compute index of colour bin
 
 
@@ -26,6 +28,21 @@ class NNEncode():
         label[pixel_indexes, indexes] = weights
 
         label = label.transpose().reshape(313,abimg.shape[1],abimg.shape[2])
+        return label
+
+    def imgEncodeTorch(self, abimg):
+        label = torch.zeros((abimg.shape[1]*abimg.shape[2],313))
+
+        (dists,indexes) = self.nbrs.kneighbors(abimg.view(abimg.shape[0],-1).t(), self.NN)
+        dists = torch.from_numpy(dists).float()
+        indexes = torch.from_numpy(indexes)
+
+        weights = torch.exp(-dists**2/(2*self.sigma**2))
+        weights = weights/torch.sum(weights,dim=1).view(-1,1)
+
+        pixel_indexes = torch.Tensor.long(torch.arange(start=0,end=abimg.shape[1]*abimg.shape[2])[:,np.newaxis])
+        label[pixel_indexes, indexes] = weights
+        label = label.t().contiguous().view(313,abimg.shape[1],abimg.shape[2])
         return label
 
 

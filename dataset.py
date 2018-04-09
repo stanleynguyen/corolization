@@ -12,6 +12,7 @@ import numpy as np
 from colorutils import NNEncode
 from sklearn.model_selection import train_test_split
 
+import time
 
 class CustomImages(Dataset):
     def __init__(self, root, train=True, val=False, color_space='lab', transform=None):
@@ -50,19 +51,16 @@ class CustomImages(Dataset):
         img = imread(self.filenames[idx])
         if self.color_space == 'lab':
             img = rgb2lab(img)
-
         if self.transform is not None:
             img = self.transform(img)
-
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
         abimg = img[:, :, 1:].transpose(2, 0, 1)    # abimg dim: 2, h, w
+        abimg = torch.from_numpy(abimg).float()
         label = -1
         if (self.train):
-            label = self.nnenc.imgEncode(abimg)
-            label = torch.from_numpy(label).float()
-        # label = label.view(-1)
-        abimg = torch.from_numpy(abimg).float()
+            label = self.nnenc.imgEncodeTorch(abimg)
+
         return (bwimg, label, abimg)
 
 
