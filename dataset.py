@@ -56,7 +56,7 @@ class CustomImages(Dataset):
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
         abimg = img[:, :, 1:].transpose(2, 0, 1)    # abimg dim: 2, h, w
-        abimg = torch.from_numpy(abimg).float()
+        abimg = torch.from_numpy(abimg).float().cuda()
         label = -1
         if (self.train):
             label = self.nnenc.imgEncodeTorch(abimg)

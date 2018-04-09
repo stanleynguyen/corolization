@@ -32,15 +32,17 @@ class NNEncode():
 
     def imgEncodeTorch(self, abimg):
         label = torch.zeros((abimg.shape[1]*abimg.shape[2],313))
+        label = label.cuda()
 
         (dists,indexes) = self.nbrs.kneighbors(abimg.view(abimg.shape[0],-1).t(), self.NN)
-        dists = torch.from_numpy(dists).float()
-        indexes = torch.from_numpy(indexes)
+        dists = torch.from_numpy(dists).float().cuda()
+        indexes = torch.from_numpy(indexes).cuda()
 
-        weights = torch.exp(-dists**2/(2*self.sigma**2))
+        weights = torch.exp(-dists**2/(2*self.sigma**2)).cuda()
         weights = weights/torch.sum(weights,dim=1).view(-1,1)
 
         pixel_indexes = torch.Tensor.long(torch.arange(start=0,end=abimg.shape[1]*abimg.shape[2])[:,np.newaxis])
+        pixel_indexes = pixel_indexes.cuda()
         label[pixel_indexes, indexes] = weights
         label = label.t().contiguous().view(313,abimg.shape[1],abimg.shape[2])
         return label
