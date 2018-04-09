@@ -5,9 +5,9 @@ import torchvision.datasets as dsets
 import numpy as np
 import sklearn.neighbors as nn
 import os
-
-# compute index of colour bin
-
+import numpy as np
+from torch.utils.data import Dataset
+from math import sqrt, pi
 
 class NNEncode():
     def __init__(self, NN=5, sigma=5, km_filepath=os.curdir + os.path.join(os.sep, 'static', 'pts_in_hull.npy')):
@@ -52,51 +52,23 @@ class NNEncode():
         return self.cc[idx]
 
 
-# for finding the distribution of values of L, a, b in the dataset
-'''
-    Ranges of L, a, b in CIFAR10 dataset:
-    lmin: 0, lmax: 100
-    amin: -73, amax: 82
-    bmin: -103, bmax: 94 '''
+def cal_emp_weights(dset, bins_num, sigma, lamda):
+    bins_prob = np.zeros((bins_num, 1))
+    for (_, _, ab_tensor) in dset:
+        ab_img = ab_tensor.numpy()
+        for h in range(ab_img.shape[1]):
+            for w in range(ab_img.shape[2]):
+                bins_prob[color2bin(ab_img[:, h, w])] += 1
 
+    bins_sum = bins_prob.sum()
+    bins_prob /= bins_sum
+    # print(bins_prob.sum())
 
-def count_color_stats():
-    dataset = dsets.CIFAR10(root='./data', train=False, download=False)
-    lmin, lmax, amin, amax, bmin, bmax = [0]*6
+    bins_idx_arr = np.arange(bins_num)
 
-    for index in range(len(dataset)):
-        img = dataset[index][0]
-        data = rgb2lab(img)
-        data = np.round(data).astype(int)
+    # bins_prob /= (sqrt(2 * pi) * sigma).sum()
+    for i, prob in enumerate(bins_prob):
+        bins_prob[i] = (prob * (np.power(i - bins_idx_arr, 2) /
+                                (sigma * sigma)) / (sqrt(2 * pi) * sigma)).sum()
 
-        l = data[:, :, 0]
-        mi = np.min(l)
-        ma = np.max(l)
-        lmin = min(lmin, mi)
-        lmax = max(lmax, ma)
-        # unique, counts = np.unique(l, return_counts=True)
-        # ldict = dict(zip(unique, counts))
-
-        a = data[:, :, 1]
-        mi = np.min(a)
-        ma = np.max(a)
-        amin = min(amin, mi)
-        amax = max(amax, ma)
-        # unique, counts = np.unique(a, return_counts=True)
-        # adict = dict(zip(unique, counts))
-
-        b = data[:, :, 2]
-        mi = np.min(b)
-        ma = np.max(b)
-        bmin = min(bmin, mi)
-        bmax = max(bmax, ma)
-        # unique, counts = np.unique(b, return_counts=True)
-        # bdict = dict(zip(unique, counts))
-
-    # print("L VALUES\n\n", ldict)
-    # print("A VALUES\n\n", adict)
-    # print("B VALUES\n\n", bdict)
-
-    print("lmin: %d, lmax: %d" % (lmin, lmax))
-    print("amin: %d, amax: %d" % (amin, amax))
-    print("bmin: %d, bmax: %d" % (bmin, bmax))
+    return 1/((1 - lamda) * bins_prob + lamda / bins_num)
