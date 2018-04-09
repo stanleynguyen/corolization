@@ -7,11 +7,12 @@ from skimage.io import imread
 from skimage.transform import resize
 import torchvision.datasets as dsets
 from os import listdir, walk
-from os.path import join, isfile, isdir
+from os.path import join, isfile, isdir, splitext
 import numpy as np
 from colorutils import NNEncode
 from sklearn.model_selection import train_test_split
 
+import pickle
 import time
 
 class CustomImages(Dataset):
@@ -27,9 +28,9 @@ class CustomImages(Dataset):
                     all_files.append(join(r, f))
 
         train_val_files, test_files = train_test_split(
-            all_files, test_size=0.2, random_state=69)
+            all_files, test_size=0.9, random_state=69)
         train_files, val_files = train_test_split(train_val_files,
-                test_size=0.1, random_state=69)
+                test_size=0.125, random_state=69)
         if (train and val):
             self.filenames = val_files
         elif train:
@@ -48,6 +49,10 @@ class CustomImages(Dataset):
         return len(self.filenames)
 
     def __getitem__(self, idx):
+        end = time.time()
+        # import pdb; pdb.set_trace()
+        file_name = splitext(self.filenames[idx])[0] + '.label'
+
         img = imread(self.filenames[idx])
         if self.color_space == 'lab':
             img = rgb2lab(img)
@@ -58,9 +63,19 @@ class CustomImages(Dataset):
         abimg = img[:, :, 1:].transpose(2, 0, 1)    # abimg dim: 2, h, w
         abimg = torch.from_numpy(abimg).float().cuda()
         label = -1
+        print("start: " + str(time.time()- end))
         if (self.train):
-            label = self.nnenc.imgEncodeTorch(abimg)
-
+            print("if train: " + str(time.time()- end))
+            if (isfile(file_name)):
+                print("if file: " + str(time.time()- end))
+                label = torch.load(file_name, map_location='cuda:0')
+                print("load: " + str(time.time()- end))
+            else:
+                print("else: " + str(time.time()- end))
+                label = self.nnenc.imgEncodeTorch(abimg)
+                print("imgencode: " + str(time.time()- end))
+                torch.save(label, file_name)
+                print("save: " + str(time.time()- end))
         return (bwimg, label, abimg)
 
 

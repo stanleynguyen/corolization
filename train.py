@@ -24,7 +24,7 @@ continue_training = False
 location = 'cpu'
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'hl:c', [
-                               'location=', 'continue='])
+                               'location=', 'continue'])
 except getopt.GetoptError:
     print('python test.py -l <location> -c')
     sys.exit(2)
@@ -40,7 +40,7 @@ for opt, arg in opts:
 
 batch_size = 8
 num_epochs = 100
-print_freq = 100
+print_freq = 1
 
 train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
                                            batch_size=batch_size,
@@ -53,10 +53,10 @@ val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
 encoder = ColorfulColorizer()
 criterion = MultinomialCELoss()
 
-# if continue_training and os.path.isfile('colorizer.pkl'):
-#     encoder.load_state_dict(torch.load(
-#         'colorizer.pkl', map_location=location))
-#     print('Model loaded!')
+if continue_training and os.path.isfile('best_model.pkl'):
+    encoder.load_state_dict(torch.load(
+        'best_model.pkl', map_location=location))
+    print('Model loaded!')
 
 
 if 'cuda' in location:
@@ -65,7 +65,7 @@ if 'cuda' in location:
     criterion.cuda()
 
 optimizer = torch.optim.SGD(encoder.parameters(),
-                            lr=0.1,
+                            lr=0.01,
                             momentum=0.9,
                             weight_decay=1e-4)
 
@@ -74,12 +74,12 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
 
 def main():
     best_loss = 100
-    
+
     for epoch in range(num_epochs):
         # train for one epoch
         train(train_loader, encoder, criterion, optimizer, epoch)
 
-        save_checkpoint(encoder.state_dict())
+        save_checkpoint(encoder.state_dict(), filename='epoch'+str(epoch))
 
         # evaluate on validation set
         val_loss = validate(val_loader, encoder, criterion)
@@ -139,6 +139,7 @@ def train(train_loader, model, criterion, optimizer, epoch):
                   .format(
                    epoch, num_epochs, i, len(train_loader), batch_time=batch_time,
                     data_time=data_time, loss=losses))
+
 
 def validate(val_loader, model, criterion):
     batch_time = AverageMeter()

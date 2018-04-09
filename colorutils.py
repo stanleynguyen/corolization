@@ -19,7 +19,7 @@ class NNEncode():
     def imgEncode(self, abimg):
         label = np.zeros((abimg.shape[1]*abimg.shape[2],313))
 
-        (dists,indexes) = self.nbrs.kneighbors(abimg.reshape(abimg.shape[0],-1).transpose(), self.NN)
+        (dists,indexes) = self.nbrs.kneighbors(abimg.reshape(abismg.shape[0],-1).transpose(), self.NN)
 
         weights = np.exp(-dists**2/(2*self.sigma**2))
         weights = weights/np.sum(weights,axis=1).reshape(-1,1)
@@ -27,7 +27,7 @@ class NNEncode():
         pixel_indexes = np.arange(0,abimg.shape[1]*abimg.shape[2],dtype='int')[:,np.newaxis]
         label[pixel_indexes, indexes] = weights
 
-        label = label.transpose().reshape(313,abimg.shape[1],abimg.shape[2])
+        label = label.transpose().reshape(313,abimg.shape[1],abimg.hape[2])
         return label
 
     def imgEncodeTorch(self, abimg):
