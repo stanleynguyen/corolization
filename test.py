@@ -63,8 +63,8 @@ print(test_cases)
 for c in test_cases:
     print('encoding ', c)
     image,_, label = test_dataset[c]
-    image = Variable(torch.from_numpy(np.array([image.numpy()])))
-    label = Variable(label)
+    image = Variable(torch.from_numpy(np.array([image.numpy()])), volatile=True)
+    label = Variable(label, volatile=True)
     if 'cuda' in location:
         image = image.cuda()
         label = label.cuda()

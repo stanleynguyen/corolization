@@ -149,8 +149,8 @@ def validate(val_loader, model, criterion):
 
     end = time.time()
     for i, (image, target, _) in enumerate(val_loader):
-        image_var = Variable(image)
-        target_var = Variable(target)
+        image_var = Variable(image, volatile=True)
+        target_var = Variable(target, volatile=True)
 
         if 'cuda' in location:
             image_var = image_var.cuda()
