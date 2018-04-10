@@ -38,7 +38,7 @@ for opt, arg in opts:
     elif opt in ('-c', '--continue'):
         continue_training = True
 
-batch_size = 8
+batch_size = 12
 num_epochs = 100
 print_freq = 100
 
@@ -53,10 +53,10 @@ val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
 encoder = ColorfulColorizer()
 criterion = MultinomialCELoss()
 
-# if continue_training and os.path.isfile('colorizer.pkl'):
-#     encoder.load_state_dict(torch.load(
-#         'colorizer.pkl', map_location=location))
-#     print('Model loaded!')
+if continue_training and os.path.isfile('best_model.pkl'):
+    encoder.load_state_dict(torch.load(
+        'best_model.pkl', map_location=location))
+    print('Model loaded!')
 
 
 if 'cuda' in location:
@@ -65,12 +65,12 @@ if 'cuda' in location:
     criterion.cuda()
 
 optimizer = torch.optim.SGD(encoder.parameters(),
-                            lr=0.1,
+                            lr=0.01,
                             momentum=0.9,
                             weight_decay=1e-4)
 
 scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
-        patience=5, verbose=True)
+        patience=3, verbose=True)
 
 def main():
     best_loss = 100

@@ -27,9 +27,9 @@ class CustomImages(Dataset):
                     all_files.append(join(r, f))
 
         train_val_files, test_files = train_test_split(
-            all_files, test_size=0.2, random_state=69)
+            all_files, test_size=0.9, random_state=69)
         train_files, val_files = train_test_split(train_val_files,
-                test_size=0.1, random_state=69)
+                test_size=0.125, random_state=69)
         if (train and val):
             self.filenames = val_files
         elif train:
