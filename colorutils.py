@@ -31,9 +31,10 @@ def cal_emp_weights(dset, bins_num, sigma, lamda):
 
     bins_idx_arr = np.arange(bins_num)
 
-    # bins_prob /= (sqrt(2 * pi) * sigma).sum()
     for i, prob in enumerate(bins_prob):
         bins_prob[i] = (prob * (np.power(i - bins_idx_arr, 2) /
                                 (sigma * sigma)) / (sqrt(2 * pi) * sigma)).sum()
 
-    return 1/((1 - lamda) * bins_prob + lamda / bins_num)
+    w = 1/((1 - lamda) * bins_prob + lamda / bins_num)
+    w /= ((bins_prob * w).sum())
+    return w
