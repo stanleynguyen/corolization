@@ -3,9 +3,7 @@
 import time
 
 import torch
-import torch.nn as nn
 from torch.autograd import Variable
-from skimage.color import yuv2rgb
 import sys
 import os
 import getopt
@@ -18,7 +16,6 @@ train_dataset = dataset.CustomImages(
 
 val_dataset = dataset.CustomImages(
     root='./SUN2012', train=True, val=True)
-
 
 continue_training = False
 location = 'cpu'

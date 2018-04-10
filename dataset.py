@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 import time
 
 class CustomImages(Dataset):
-    def __init__(self, root, train=True, val=False, color_space='lab', transform=None):
+    def __init__(self, root, train=True, val=False, color_space='lab', transform=None, test_size=0.9, val_size=0.125):
         """
             color_space: 'yub' or 'lab'
         """
@@ -25,11 +25,10 @@ class CustomImages(Dataset):
             for f in files:
                 if f.endswith('.jpg'):
                     all_files.append(join(r, f))
-
         train_val_files, test_files = train_test_split(
-            all_files, test_size=0.9, random_state=69)
+            all_files, test_size=test_size, random_state=69)
         train_files, val_files = train_test_split(train_val_files,
-                test_size=0.125, random_state=69)
+                test_size=val_size, random_state=69)
         if (train and val):
             self.filenames = val_files
         elif train:
@@ -62,7 +61,6 @@ class CustomImages(Dataset):
             label = self.nnenc.imgEncodeTorch(abimg)
 
         return (bwimg, label, abimg)
-
 
 class Rescale(object):
     """Rescale the image in a sample to a given size.
