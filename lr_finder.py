@@ -6,13 +6,13 @@ from corolization import ColorfulColorizer, MultinomialCELoss
 
 dset_root = './SUN2012'
 batch_size = 12
-num_batches = 124
+num_batches = 123
 num_epochs = 1
 print_freq = 1
 encoder = ColorfulColorizer()
 criterion = MultinomialCELoss()
-start_lr = 1e-4
-end_lr = 1
+start_lr = 0.1
+end_lr = 10
 
 lr_mult = (end_lr/start_lr) ** (1/num_batches)
 lr_lambda = lambda step: lr_mult ** step
@@ -30,6 +30,6 @@ learning_rates = [start_lr * lr_mult ** x for x in list(range(num_batches))]
 
 plt.ylabel("d/loss")
 plt.xlabel("learning rate (log scale)")
-plt.plot(learning_rates, losses)
+plt.plot(learning_rates, losses[0])
 plt.xscale('log')
 plt.show()

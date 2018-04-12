@@ -88,6 +88,7 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch,
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
+    epoch_losses = []
 
     # switch to train mode
     model.train()
@@ -108,6 +109,7 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch,
         output = model(image_var)
         loss = criterion(output, target_var)
         losses.update(loss.data[0], image.size(0))
+        epoch_losses.append(loss.data[0])
 
         # step scheduler for lr finder
         if (step_every_iteration):
@@ -133,7 +135,7 @@ def train(train_loader, model, criterion, optimizer, scheduler, epoch,
                   .format(
                    epoch, num_epochs, i, len(train_loader), batch_time=batch_time,
                     data_time=data_time, loss=losses))
-    return losses
+    return epoch_losses
 
 def validate(val_loader, model, criterion, location,num_epochs, print_freq):
     batch_time = AverageMeter()
@@ -196,7 +198,7 @@ if __name__ == '__main__':
     encoder = ColorfulColorizer()
     criterion = MultinomialCELoss()
     optimizer = torch.optim.SGD(encoder.parameters(),
-                                lr=0.01,
+                                lr=0.5,
                                 momentum=0.9,
                                 weight_decay=1e-4)
 

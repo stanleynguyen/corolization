@@ -48,7 +48,6 @@ class CustomImages(Dataset):
         return len(self.filenames)
 
     def __getitem__(self, idx):
-        print('get')
         img = imread(self.filenames[idx])
         if self.color_space == 'lab':
             img = rgb2lab(img)
