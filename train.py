@@ -69,12 +69,12 @@ def main(dset_root, batch_size, num_epochs, print_freq, encoder, criterion,
         # evaluate on validation set
         val_loss = validate(val_loader, encoder, criterion, location, num_epochs, print_freq)
         if (not step_every_iteration):
-            scheduler.step(val_loss.cpu().data.numpy())
-        is_best = val_loss.cpu().data.numpy() < best_loss
+            scheduler.step(val_loss.data[0])
+        is_best = val_loss.data[0] < best_loss
 
         if is_best:
             print('new best validation')
-            best_loss = val_loss.cpu().data.numpy()
+            best_loss = val_loss.data[0]
             save_checkpoint(encoder.state_dict(), is_best)
     return losses
 
