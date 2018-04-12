@@ -11,75 +11,62 @@ import getopt
 from corolization import ColorfulColorizer, MultinomialCELoss
 import dataset
 
-continue_training = False
-location = 'cpu'
-try:
-    opts, args = getopt.getopt(sys.argv[1:], 'hl:c', [
-                               'location=', 'continue='])
-except getopt.GetoptError:
-    print('python test.py -l <location> -c')
-    sys.exit(2)
+def main(dset_root, batch_size, num_epochs, print_freq, encoder, criterion, optimizer, scheduler):
+    continue_training = False
+    location = 'cpu'
+    try:
+        opts, args = getopt.getopt(sys.argv[1:], 'hl:c', [
+                                   'location=', 'continue='])
+    except getopt.GetoptError:
+        print('python train.py -l <location> -c')
+        sys.exit(2)
 
-for opt, arg in opts:
-    if opt == '-h':
-        print('python test.py -l <location> -c <testcases>')
-        sys.exit(0)
-    elif opt in ('-l', '--location'):
-        location = arg
-    elif opt in ('-c', '--continue'):
-        continue_training = True
+    for opt, arg in opts:
+        if opt == '-h':
+            print('python train.py -l <location> -c <testcases>')
+            sys.exit(0)
+        elif opt in ('-l', '--location'):
+            location = arg
+        elif opt in ('-c', '--continue'):
+            continue_training = True
 
-train_dataset = dataset.CustomImages(
-    root='./SUN2012', train=True, location=location)
+    train_dataset = dataset.CustomImages(
+        root=dset_root, train=True, location=location)
 
-val_dataset = dataset.CustomImages(
-    root='./SUN2012', train=True, val=True, location=location)
+    val_dataset = dataset.CustomImages(
+        root=dset_root, train=True, val=True, location=location)
 
-batch_size = 12
-num_epochs = 100
-print_freq = 100
+    train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
+                                               batch_size=batch_size,
+                                               shuffle=True)
 
-train_loader = torch.utils.data.DataLoader(dataset=train_dataset,
-                                           batch_size=batch_size,
-                                           shuffle=True)
+    val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
+                                               batch_size=batch_size,
+                                               shuffle=True)
 
-val_loader = torch.utils.data.DataLoader(dataset=val_dataset,
-                                           batch_size=batch_size,
-                                           shuffle=True)
-
-encoder = ColorfulColorizer()
-criterion = MultinomialCELoss()
-
-if continue_training and os.path.isfile('best_model.pkl'):
-    encoder.load_state_dict(torch.load(
-        'best_model.pkl', map_location=location))
-    print('Model loaded!')
+    if continue_training and os.path.isfile('best_model.pkl'):
+        encoder.load_state_dict(torch.load(
+            'best_model.pkl', map_location=location))
+        print('Model loaded!')
 
 
-if 'cuda' in location:
-    print('Using:', torch.cuda.get_device_name(torch.cuda.current_device()))
-    encoder.cuda()
-    criterion.cuda()
+    if 'cuda' in location:
+        print('Using:', torch.cuda.get_device_name(torch.cuda.current_device()))
+        encoder.cuda()
+        criterion.cuda()
 
-optimizer = torch.optim.SGD(encoder.parameters(),
-                            lr=0.01,
-                            momentum=0.9,
-                            weight_decay=1e-4)
-
-scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
-        patience=3, verbose=True)
-
-def main():
     best_loss = 100
+    losses = []
 
     for epoch in range(num_epochs):
         # train for one epoch
-        train(train_loader, encoder, criterion, optimizer, epoch)
+        epoch_losses = train(train_loader, encoder, criterion, optimizer, epoch, location)
+        losses.append(epoch_losses)
 
         save_checkpoint(encoder.state_dict())
 
         # evaluate on validation set
-        val_loss = validate(val_loader, encoder, criterion)
+        val_loss = validate(val_loader, encoder, criterion, location)
 
         scheduler.step(val_loss.cpu().data.numpy())
         is_best = val_loss.cpu().data.numpy() < best_loss
@@ -88,13 +75,14 @@ def main():
             print('new best validation')
             best_loss = val_loss.cpu().data.numpy()
             save_checkpoint(encoder.state_dict(), is_best)
+    return losses
 
 def save_checkpoint(state, is_best=False, filename='colorizer.pkl'):
     torch.save(state, filename)
     if is_best:
         torch.save(state, 'best_model.pkl')
 
-def train(train_loader, model, criterion, optimizer, epoch):
+def train(train_loader, model, criterion, optimizer, epoch, location):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -136,8 +124,9 @@ def train(train_loader, model, criterion, optimizer, epoch):
                   .format(
                    epoch, num_epochs, i, len(train_loader), batch_time=batch_time,
                     data_time=data_time, loss=losses))
+    return losses
 
-def validate(val_loader, model, criterion):
+def validate(val_loader, model, criterion, location):
     batch_time = AverageMeter()
     losses = AverageMeter()
 
@@ -191,4 +180,18 @@ class AverageMeter(object):
         self.avg = self.sum / self.count
 
 if __name__ == '__main__':
-    main()
+    dset_root = './SUN2012'
+    batch_size = 12
+    num_epochs = 100
+    print_freq = 100
+    encoder = ColorfulColorizer()
+    criterion = MultinomialCELoss()
+    optimizer = torch.optim.SGD(encoder.parameters(),
+                                lr=0.01,
+                                momentum=0.9,
+                                weight_decay=1e-4)
+
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
+            patience=3, verbose=True)
+    main(dset_root, batch_size, num_epochs, print_freq, encoder,
+         criterion, optimizer, scheduler)
