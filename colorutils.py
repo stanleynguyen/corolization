@@ -17,7 +17,7 @@ class NNEncode():
         self.sigma = sigma
         self.nbrs = nn.NearestNeighbors(n_neighbors=NN, algorithm='ball_tree').fit(self.cc)
         if train:
-            self.weights = torch.load('static/weights')
+            self.weights = torch.load('static/weights.torch')
             if ('cuda' in location):
                 self.weights = self.weights.cuda()
 
