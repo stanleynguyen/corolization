@@ -11,7 +11,8 @@ import getopt
 from corolization import ColorfulColorizer, MultinomialCELoss
 import dataset
 
-def main(dset_root, batch_size, num_epochs, print_freq, encoder, criterion, optimizer, scheduler):
+def main(dset_root, batch_size, num_epochs, print_freq, encoder, criterion,
+         optimizer, scheduler, step_every_iteration=False):
     continue_training = False
     location = 'cpu'
     try:
@@ -60,15 +61,15 @@ def main(dset_root, batch_size, num_epochs, print_freq, encoder, criterion, opti
 
     for epoch in range(num_epochs):
         # train for one epoch
-        epoch_losses = train(train_loader, encoder, criterion, optimizer, epoch, location)
+        epoch_losses = train(train_loader, encoder, criterion, optimizer, scheduler, epoch, location, step_every_iteration, num_epochs, print_freq)
         losses.append(epoch_losses)
 
         save_checkpoint(encoder.state_dict())
 
         # evaluate on validation set
-        val_loss = validate(val_loader, encoder, criterion, location)
-
-        scheduler.step(val_loss.cpu().data.numpy())
+        val_loss = validate(val_loader, encoder, criterion, location, num_epochs, print_freq)
+        if (not step_every_iteration):
+            scheduler.step(val_loss.cpu().data.numpy())
         is_best = val_loss.cpu().data.numpy() < best_loss
 
         if is_best:
@@ -82,7 +83,8 @@ def save_checkpoint(state, is_best=False, filename='colorizer.pkl'):
     if is_best:
         torch.save(state, 'best_model.pkl')
 
-def train(train_loader, model, criterion, optimizer, epoch, location):
+def train(train_loader, model, criterion, optimizer, scheduler, epoch,
+          location, step_every_iteration,num_epochs, print_freq):
     batch_time = AverageMeter()
     data_time = AverageMeter()
     losses = AverageMeter()
@@ -107,6 +109,13 @@ def train(train_loader, model, criterion, optimizer, epoch, location):
         loss = criterion(output, target_var)
         losses.update(loss.data[0], image.size(0))
 
+        # step scheduler for lr finder
+        if (step_every_iteration):
+            scheduler.step()
+            for k, param_group in enumerate(optimizer.param_groups):
+                print(param_group['lr'])
+            # print(optimizer.param_groups.lr)
+
         # compute gradient and do SGD step
         optimizer.zero_grad()
         loss.backward()
@@ -126,7 +135,7 @@ def train(train_loader, model, criterion, optimizer, epoch, location):
                     data_time=data_time, loss=losses))
     return losses
 
-def validate(val_loader, model, criterion, location):
+def validate(val_loader, model, criterion, location,num_epochs, print_freq):
     batch_time = AverageMeter()
     losses = AverageMeter()
 
