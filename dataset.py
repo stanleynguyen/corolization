@@ -15,7 +15,7 @@ from sklearn.model_selection import train_test_split
 import time
 
 class CustomImages(Dataset):
-    def __init__(self, root, train=True, val=False, color_space='lab', transform=None, test_size=0.9, val_size=0.125):
+    def __init__(self, root, train=True, val=False, color_space='lab', transform=None, test_size=0.9, val_size=0.125,location='cpu'):
         """
             color_space: 'yub' or 'lab'
         """
@@ -40,13 +40,15 @@ class CustomImages(Dataset):
         if (self.color_space not in ['rgb', 'lab']):
             raise(NotImplementedError)
         self.transform = transform
-        self.nnenc = NNEncode()
+        self.location = location
+        self.nnenc = NNEncode(location=self.location)
         self.train = train
 
     def __len__(self):
         return len(self.filenames)
 
     def __getitem__(self, idx):
+        print('get')
         img = imread(self.filenames[idx])
         if self.color_space == 'lab':
             img = rgb2lab(img)
@@ -55,10 +57,13 @@ class CustomImages(Dataset):
         bwimg = img[:, :, 0:1].transpose(2, 0, 1)
         bwimg = torch.from_numpy(bwimg).float()
         abimg = img[:, :, 1:].transpose(2, 0, 1)    # abimg dim: 2, h, w
-        abimg = torch.from_numpy(abimg).float().cuda()
+        abimg = torch.from_numpy(abimg).float()
         label = -1
         if (self.train):
-            label = self.nnenc.imgEncodeTorch(abimg)
+            if ('cuda' in self.location):
+                label = self.nnenc.imgEncodeTorch(abimg)
+            else:
+                label = self.nnenc.imgEncode(abimg)
 
         return (bwimg, label, abimg)
 

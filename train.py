@@ -11,12 +11,6 @@ import getopt
 from corolization import ColorfulColorizer, MultinomialCELoss
 import dataset
 
-train_dataset = dataset.CustomImages(
-    root='./SUN2012', train=True)
-
-val_dataset = dataset.CustomImages(
-    root='./SUN2012', train=True, val=True)
-
 continue_training = False
 location = 'cpu'
 try:
@@ -34,6 +28,12 @@ for opt, arg in opts:
         location = arg
     elif opt in ('-c', '--continue'):
         continue_training = True
+
+train_dataset = dataset.CustomImages(
+    root='./SUN2012', train=True, location=location)
+
+val_dataset = dataset.CustomImages(
+    root='./SUN2012', train=True, val=True, location=location)
 
 batch_size = 12
 num_epochs = 100
@@ -71,7 +71,7 @@ scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, 'min',
 
 def main():
     best_loss = 100
-    
+
     for epoch in range(num_epochs):
         # train for one epoch
         train(train_loader, encoder, criterion, optimizer, epoch)
