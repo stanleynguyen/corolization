@@ -104,6 +104,19 @@ class ColorfulColorizer(nn.Module):
         self.op_9 = nn.Sequential(
             nn.Softmax(dim=1)
         )
+        self.op_1.apply(self.init_weights)
+        self.op_2.apply(self.init_weights)
+        self.op_3.apply(self.init_weights)
+        self.op_4.apply(self.init_weights)
+        self.op_5.apply(self.init_weights)
+        self.op_6.apply(self.init_weights)
+        self.op_7.apply(self.init_weights)
+        self.op_8.apply(self.init_weights)
+
+    def init_weights(self, m):
+        if type(m) == nn.Conv2d:
+            torch.nn.init.xavier_uniform(m.weight)
+            m.bias.data.fill_(0.01)
 
     def forward(self, x):
         out = self.op_1(x)
