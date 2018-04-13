@@ -62,4 +62,8 @@ def prior():
     implied_prior = prior_probs*prior_factor
     implied_prior = implied_prior/np.sum(implied_prior) # re-normalize
 
+    reciprocal = 1/implied_prior
+    reciprocal /= (reciprocal*prior_probs).sum()
+    torch.save(torch.from_numpy(reciprocal).float(), 'static/weights.torch')
+
 prior()
