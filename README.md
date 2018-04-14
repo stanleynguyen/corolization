@@ -2,13 +2,13 @@
 
 AI agent to colorize b&w images
 
-## Motivations
+## Motivation
 
-Back when we were in high school, there were a lot of shops where
-you can hire someone to colour old photos of your childhood where cameras
+Back in high school, there were plenty of shops where
+you could hire someone to colour old photos from your childhood, when cameras
 had not been as good. And do you know that there is a [subreddit](https://www.reddit.com/r/Colorization/) dedicated to colorizing black and white photos. It would take an artist quite an amount of time ranging from a few hours to a few days to colorize a b&w photo.
 
-Imagine if we have the power to instantaneously convert b&w into vibrant, colorful photos. We would be able to breathe life into hundreds of thousands of photos, offering the viewers an more immersive experience looking at those photos from a different era. An automated colorizer would also be very useful for other purposes like enhancing/color-correcting photos.
+Imagine if we had the power to instantaneously convert b&w photographs into vibrant, colorful ones! We would be able to breathe life into hundreds of thousands of photos, offering the viewers an more immersive experience looking at those photos from a different era. An automated colorizer would also be very useful for other purposes like enhancing/color-correcting photos.
 
 We aim to produce an automated colorizer using deep learning computer vision techniques to produce colorful images from b&w photos, that look reasonably good with the actual outside world as a benchmark.
 
@@ -18,79 +18,79 @@ This is the story about how our colorizer has evolved over time:
 
 ### The rudimentary generator
 
-Our first attempt was to use a generator on the b&w image input and generate every pixel of the output image as RGB values. We tested the idea out using a simple neural network with multiple fully-connected layers. After about 900 epochs of training, the net seemed to have converged and produced this
+Our first attempt was to use a generator on the black-and-white image input and generate every pixel of the output image as RGB values. We tested the idea on a simple neural network with multiple fully-connected layers. After about 900 epochs of training, the net seemed to converged and produced the following results
 
 ![rudimentary_generator](pictures/rudimentary_gen.png)
 <br/>_Test case from CIFAR-10 dataset_
 
-From the example above, we can see that the neural net has learnt a bit to immitate the general shape of the object in the b&w image, however, the result generated is far from what is considered "comprehensible" by human vision.
+From the example above, we can see that the neural net has learnt a bit to imitate the general shape of the object in the black-and-white image, although the result is far from "comprehensible" by standards of human vision.
 
-We realised that it is quite tedious to train a "from scratch" generator with the b&w input to perform decently. It would be more reasonable to leverage on what we already have as input (b&w image) and generate the color layers. This would require using a colour space that has "lightness" as one channel, such as HSL, YUV or Lab, so that the neural net can be trained to output the 2 colour layers, and we just concatenate the lightness layer to get the final image. We decided to try this approach out. 
+We realised that it is quite tedious to train a "from scratch" generator with the black-and-white input to perform decently. It would be more reasonable to leverage on what we already have as input (black-and-white image) and generate the colour layers. This would require using a colour space that has "lightness" as one of its channels, such as HSL, LUV or Lab, so that the neural net can be trained to output the 2 colour layers, and we would just have to concatenate the lightness layer to get the final image. We decided to try out this approach. 
 
-### The "too-generic" colorizer
+### The "over-generic" colorizer
 
 We were looking for an inspiration when we stumbled on a [blog post](http://tinyclouds.org/colorize/) by [Ryan Dahl](https://github.com/ry). We tried implementing his proposed approach of a residual encoder backed with VGG-16.
 
 ![residual_encoder](pictures/residual_encoder.png)
 
-As the name suggests, this architecture convolves the input through multiple layers (that are drawn from VGG-16), and at the same time upscales the output to add back to the previous output to be use for further upscaling. The final output (a pair of UV layers) will then be added back to Y-layer input. There is a huge drawback in terms of resource for this model. It would take a few hours to cycle through one epoch of [SUN dataset](https://groups.csail.mit.edu/vision/SUN/). Furthermore, the improvement is rather slow and incremental, after a few epochs of the dataset, we only achieved uniformly sepia-toned outputs. Even after more training epochs, we only achieved rather desaturated results, which is not close to what could be a good guess of colors and would be too "ugly" for human cognition. 
+As its name suggests, the architecture convolves the input through multiple layers drawn from VGG-16. At the same time, it upscales the output and adds to the previous output for further upscaling.  The final output (a pair of UV layers) is then added back to the Y-layer input. There is a huge drawback in terms of resource for this model. It would take several hours to cycle through one epoch of [SUN dataset](https://groups.csail.mit.edu/vision/SUN/). Furthermore, improvement is slow and incremental - after a few epochs of the dataset, we achieved only uniformly sepia-toned outputs. Increasing the number of training epochs produced no further improvement, with desaturated colours hardly convincing to human cognition. 
 
-We decided that this approach would be not robust enough and too slow for us to keep re-iterating over the course of our limited timeframe for this project, so we moved on to a new approach.
+We decided that this approach would be not robust enough and too slow for us to keep re-iterating over the course of the limited timeframe for this project, so we moved on to a new approach.
 
 ### The colorful colorizer
 
-After looking out for a few more inspiration, we settled on a [research idea](http://richzhang.github.io/colorization/) from UC Berkerley [Rich Zhang](http://richzhang.github.io/). The neural net architecture that was explored is rather simple and can be summed up with this diagram below
+After looking around for more inspiration, we settled on a [research idea](http://richzhang.github.io/colorization/) from UC Berkerley's [Rich Zhang](http://richzhang.github.io/). The neural net architecture proposed can be summed up in the diagram below:
 
 ![colorful colorizer](pictures/colorful_colorizer.jpg)
 
-This approach is rather simple: Taking in the L-layer (in a LAB color scheme) of an image as input, convolute it through 8 convolutional blocks, then generate a probability distribution of colors for each pixels (blue block) and finally output the actual pair of AB-layers and upscale to full-size color layers.
+The architecture is straightforward - the net takes in the L-layer (in a Lab colour scheme) of an image as input, convolves it through 8 convolutional blocks, generates a probability distribution of colors for each pixel (blue block) and finally outputs the actual pair of ab-layers and upscales them to full-sized color layers.
 
-This research approach is actually trying to tackle the problem of de-saturated coloring guess from precedent CNN attempts to colorize photos. Most of magic lies inside the way the loss is formulated. In previous attempts, the loss function is based on Euclidean distance between the predicted colour and ground truth colour of each pixel. However, for objects that can be one of many different colours (eg. a ball can be any colour), the neural network will tend to predict something close to the average of the different coloured objects it was trained on. This will result in a more neutral prediction output.
+This research approach tackles the problem of desaturated guesses from precedent CNN attempts to colourize photos. Much of the magic lies in the way the loss is formulated. In precedent attempts, the loss functions were calculated as the Euclidean distance between the predicted colour and ground truth colour of each pixel. This means that for any object, the neural network will tend to predict something close to the average range of all the different colour and saturation values for the particular object it has been trained on. For objects that present a wide variety of colours and saturations, this averaging effect tends to favour grayish and desaturated predictions.
 
-Hence, in this paper, the problem is treated as a multimodal classification problem. Rather than outputting color values directly like other approaches, all possible AB pairs of values are put into 313 different "bins" (or can be preceived as categories) and converted back to actual color values during prediction. Training labels are also soft-encoded using nearest neighbors based on this color table belows.
+In this paper, colorization is treated as a multimodal classification problem. Rather than directly outputting colour values like in other approaches, all possible ab pairs of values are put into 313 different "bins" or categories and converted back to actual colour values during prediction. Training labels are also soft-encoded using the nearest neighbors algorithm based on the colour table shown below.
 
 ![colors](pictures/colors.png)
 
-We went ahead and implemented this neural net and achieved this decent result after 47 epochs.
+We implemented this neural net and achieved a decent result after 47 epochs.
 
 ![wo rebal 47](<pictures/10_apr-(3.04)-47epoch_vgood.png>)
 <br/>_From left to right (input, prediction, actual image)_
 
-The result was not much better than the previously mentioned residual encoder, however, it took a lot less time to train. Nevertheless, one problem with this is that it always predicts the general colors, which works well for things like trees, sky that tend to always be around the same colour. However, it doesn't work as well for non-generic things (which could be of any colors) as they tend to be of "rare" colours, which the neural net is unable to accurately predict. This results in very neutral-coloured output images especially for indoor scenes.
+Although the result was not much better than that of the residual encoder, training time was reduced significantly. The problem with this approach is that it always predicts general colors. While this works well for objects that tend always to be the same colour such as trees and skies it is unable to accurately predict the colours of non-generic entities, which might present in rare colours. This resulted in neutral-coloured outputs, especially for indoor scenes.
 
 ![wo rebal 47](<pictures/10_apr-(3.04)-47epoch_indoor.png>)
 <br/>_From left to right (input, prediction, actual image)_
 
-As a result, we draw another technique from the paper called "class rebalancing". For this, we calculate weights for each color bin using the prior distribution of colors of the whole dataset, using this formula:
+As a result, we drew another technique from the paper called "class rebalancing". For this, we calculate weights for each color bin using the prior distribution of colours from the whole dataset using this formula:
 
 ![formula](pictures/formula_rebal.png)
 <br/>_q is the color bin, Z is the one-hot label at corresponding pixel_
 
-The basic idea behind this formula is to rebalance the weightage of each color during the training process by giving those that appear more often less weightage and vice versa. We implemented this and trained the network through a few epochs.
+The idea behind this formula is to reweight the loss of each pixel during the training process by reducing the weightage on colours that appear more frequently and increasing the weightage on rare colours. Training the network through several epochs produced the following results:
 
 ![w rebal](pictures/10_apr-rebal3.png)
 <br/>_From left to right (input, prediction, actual image)_
 
-Ignoring the fact that we only trained it for a few epochs (which explains why the predictions are not very good), we can observe that the neural net now outputs more "daring" guesses, making the predictions look more colorful and life-like.
+Notwithstanding the fact that it was only trained for a few epochs (which explains why the predictions are not very good), the neural net made more "daring" guesses, resulting in predictions that were more colourful and life-like.
 
-At this moment, we also realised another problem with the current approach is that the prediction often overflows from one object to another. After a long process of investigation by overfitting the neural net into one image and observing that the predictions still overflow, we found out that the reason is because all parameters were initialized from a uniform distribution (same starting point!) as the default from PyTorch. We changed the initilization method into Xavier intilization, which produced a very good distition between objects when overfitted.
+At this point, we discovered yet another problem - the prediction frequently overflows from one object to another. After a long process of investigation which involved overfitting the neural net into one image and observing that the predictions still overflow, we traced the reason to the fact that all parameters had been initialized from a uniform distribution (same starting point!) as the default from PyTorch. We thus changed our initialization method to the Xavier intilization, which produced a very good distinction between objects when overfitted.
 
 ![overfitted](pictures/overfit_2.png)
 <br/>_From left to right (input, prediction, actual image)_
 
 ## Tuning the "hyper-paradio" (hyper-parameters)
 
-We ultilized a specific technique of plotting traning loss for every batch with different learning rates ([reference](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)). We plotted multiple ranges of learning rates but from this best plot of learning rates ranging from 0.1 to 10, we managed to find the optimal learning rate for our approach to be about 0.5 and went ahead with it for training
+We ultilized a specific technique of plotting traning loss for every batch with different learning rates ([reference](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)). We plotted multiple ranges of learning rates and from this best plot of learning rates ranging from 0.1 to 10, found the optimal learning rate for our approach to be approximately 0.5 and incorporated it into our training.
 
 ![lr plot](pictures/lr_finder_10percent.png)
 
-## Further improvement
+## Further improvements
 
-We have achieved decent predictions with our current approach but we are aware that there is still space for us to improve our model. One way we thought of is to use Generative Adversarial Networks (GAN). The "game" can be formulated such that our current neural net will be the "forger", and there will be an additional network acting as the "detector", trying to distinguish between output from the "forger" and the actual image. However, due to the time constraints of this project, we did not have the chance to put this into practice.
+While our current model yields decent predictions, there is much room for improvement. One such was to introduce Generative Adversarial Networks. The "game" could be formulated such that our current neural net will be the "forger", and an additional network the "detector" which tries to distinguish between an output from the "forger" and the actual image. However, due to time constraints, we did not have a chance to implement this.
 
 ## Technologies
 
-* [PyTorch](http://pytorch.org/) (It's an awesome, python-first deep learning framework)
+* [PyTorch](http://pytorch.org/) (An awesome, python-first deep learning framework)
 * [sk-learn](http://scikit-learn.org/) (Our casual friend)
 * [sk-image](http://scikit-image.org/) (Python image magician)
 
@@ -102,7 +102,7 @@ We have achieved decent predictions with our current approach but we are aware t
 * Jo Hsi Keong
 * Tan Li Xuan
 
-## Acknowledgement
+## Acknowledgements
 
 _SUTD 50.035 Computer Vision Instructors and TAs:_
 
