@@ -4,13 +4,11 @@ AI agent to colorize b&w images
 
 ## Motivation
 
-Back in high school, there were plenty of shops where
-you could hire someone to colour old photos from your childhood, when cameras
-had not been as good. And do you know that there is a [subreddit](https://www.reddit.com/r/Colorization/) dedicated to colorizing black and white photos. It would take an artist quite an amount of time ranging from a few hours to a few days to colorize a b&w photo.
+Back in high school, there were plenty of shops which let you hire artists to colour old childhood photographs from an age where camera technology had been much more primitive. Today, the enduring appeal of colour has sparked a [subreddit](https://www.reddit.com/r/Colorization/) dedicated to colorizing black-and-white photos.
 
-Imagine if we had the power to instantaneously convert b&w photographs into vibrant, colorful ones! We would be able to breathe life into hundreds of thousands of photos, offering the viewers an more immersive experience looking at those photos from a different era. An automated colorizer would also be very useful for other purposes like enhancing/color-correcting photos.
+Yet it takes an artist a considerable amount of time to colour a black-and-white photograph. Imagine if we had the power to instantaneously transform black-and-white photographs into vibrant, colourful ones - to breathe life into relics, to journey through time! An automated colorizer would also come in handy for enhancing and correcting photos.
 
-We aim to produce an automated colorizer using deep learning computer vision techniques to produce colorful images from b&w photos, that look reasonably good with the actual outside world as a benchmark.
+Our hope is to create an automated colourizer using deep learning techniques to generate coloured images from black-and-white photos that are reasonably convincing, with the real world as a benchmark.
 
 ## The saga of Corolization
 
@@ -45,7 +43,7 @@ After looking around for more inspiration, we settled on a [research idea](http:
 
 The architecture is straightforward - the net takes in the L-layer (in a Lab colour scheme) of an image as input, convolves it through 8 convolutional blocks, generates a probability distribution of colors for each pixel (blue block) and finally outputs the actual pair of ab-layers and upscales them to full-sized color layers.
 
-This research approach tackles the problem of desaturated guesses from precedent CNN attempts to colourize photos. Much of the magic lies in the way the loss is formulated. In precedent attempts, the loss functions were calculated as the Euclidean distance between the predicted colour and ground truth colour of each pixel. This means that for any object, the neural network will tend to predict something close to the average range of all the different colour and saturation values for the particular object it has been trained on. For objects that present a wide variety of colours and saturations, this averaging effect tends to favour grayish and desaturated predictions.
+This approach tackles the problem of desaturated guesses from precedent CNN attempts to colourize photos. Much of the magic lies in the way the loss is formulated. In precedent attempts, the loss functions were calculated as the Euclidean distance between the predicted colour and ground truth colour of each pixel. This means that for any object, the neural network will tend to predict something close to the average range of all the different colour and saturation values for the particular object it has been trained on. For objects that present a wide variety of colours and saturations, this averaging effect tends to favour grayish and desaturated predictions.
 
 In this paper, colorization is treated as a multimodal classification problem. Rather than directly outputting colour values like in other approaches, all possible ab pairs of values are put into 313 different "bins" or categories and converted back to actual colour values during prediction. Training labels are also soft-encoded using the nearest neighbors algorithm based on the colour table shown below.
 
