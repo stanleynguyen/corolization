@@ -9,13 +9,13 @@ import torchvision.datasets as dsets
 from os import listdir, walk
 from os.path import join, isfile, isdir
 import numpy as np
-from colorutils import NNEncode
+from colorutils import NNEncode, uint_color2tanh_range
 from sklearn.model_selection import train_test_split
-
 import time
 
+
 class CustomImages(Dataset):
-    def __init__(self, root, train=True, val=False, color_space='lab', transform=None, test_size=0.9, val_size=0.125,location='cpu'):
+    def __init__(self, root, train=True, val=False, color_space='lab', transform=None, test_size=0.9, val_size=0.125, location='cpu'):
         """
             color_space: 'yub' or 'lab'
         """
@@ -28,7 +28,7 @@ class CustomImages(Dataset):
         train_val_files, test_files = train_test_split(
             all_files, test_size=test_size, random_state=69)
         train_files, val_files = train_test_split(train_val_files,
-                test_size=val_size, random_state=69)
+                                                  test_size=val_size, random_state=69)
         if (train and val):
             self.filenames = val_files
         elif train:
@@ -66,6 +66,7 @@ class CustomImages(Dataset):
 
         return (bwimg, label, abimg)
 
+
 class Rescale(object):
     """Rescale the image in a sample to a given size.
 
@@ -96,3 +97,46 @@ class Rescale(object):
         img = resize(image, (new_h, new_w))
 
         return img
+
+
+class GANDataset(Dataset):
+    def __init__(self, root, train=True, val=False, transform=None, test_size=0.1, val_size=0.125):
+        """
+            color_space: 'yub' or 'lab'
+        """
+        self.root_dir = root
+        all_files = []
+        for r, _, files in walk(self.root_dir):
+            for f in files:
+                if f.endswith('.jpg'):
+                    all_files.append(join(r, f))
+        train_val_files, test_files = train_test_split(
+            all_files, test_size=test_size, random_state=69)
+        train_files, val_files = train_test_split(train_val_files,
+                                                  test_size=val_size, random_state=69)
+        if (train and val):
+            self.filenames = val_files
+        elif train:
+            self.filenames = train_files
+        else:
+            self.filenames = test_files
+
+        self.transform = transform
+        self.train = train
+
+    def __getitem__(self, idx):
+        bwimg = imread(self.filenames[idx], as_grey=True)
+        realimg = imread(self.filenames[idx])
+        bwimg = resize(bwimg, (256, 256))
+        realimg = resize(realimg, (256, 256))
+
+        input_img = uint_color2tanh_range(bwimg)
+        label_img = uint_color2tanh_range(realimg)
+
+        ip = torch.from_numpy(np.array([input_img])).float()
+        label = torch.from_numpy(label_img.transpose(2, 0, 1)).float()
+
+        return (ip, label)
+
+    def __len__(self):
+        return len(self.filenames)
