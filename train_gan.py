@@ -9,6 +9,7 @@ import os
 import getopt
 import cv2
 import numpy as np
+import matplotlib.pyplot as plt
 
 from pix2pix import Discriminator, Generator, weights_init
 from dataset import GANDataset
@@ -20,12 +21,14 @@ def modelimg2cvimg(img):
     return tanh_range2uint_color(cvimg)
 
 
-dset_root = './data'
-batch_size = 12
+dset_root = './SUN2012'
+batch_size = 32
 num_epochs = 100
-print_freq = 100
+print_freq = 1
 input_channel = 1
 output_channel = 3
+learning_rate = 0.0001
+decay_freq = 100
 
 continue_training = False
 location = 'cpu'
@@ -53,12 +56,10 @@ generator_G = Generator(input_channel, output_channel)
 discriminator_D = Discriminator(input_channel, output_channel)
 loss_L1 = nn.L1Loss()
 loss_binaryCrossEntropy = nn.BCELoss()
-optimizer_G = torch.optim.Adam(generator_G.parameters(
-), lr=0.0002, betas=(0.5, 0.999), weight_decay=0.00001)
-optimizer_D = torch.optim.Adam(discriminator_D.parameters(
-), lr=0.0002, betas=(0.5, 0.999), weight_decay=0.00001)
+optimizer_G = torch.optim.Adam(generator_G.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
+optimizer_D = torch.optim.Adam(discriminator_D.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
 
-if continue_training and os.path.isfile('generator.pkl') and os.path.file('discriminator.pkl'):
+if continue_training and os.path.isfile('generator.pkl') and os.path.isfile('discriminator.pkl'):
     generator_G.load_state_dict(torch.load(
         'generator.pkl', map_location=location))
     discriminator_D.load_state_dict(torch.load(
@@ -85,6 +86,7 @@ for epoch in range(num_epochs):
             target_var = target_var.cuda()
 
         out_generator_G = generator_G.forward(ip_var)
+        showimg = modelimg2cvimg(out_generator_G.cpu().data.numpy())
 
         optimizer_D.zero_grad()
         negative_examples = discriminator_D.forward(
@@ -94,8 +96,8 @@ for epoch in range(num_epochs):
         d_ones_label = Variable(torch.ones(positive_examples.size()))
         d_zeros_label = Variable(torch.zeros(negative_examples.size()))
         if 'cuda' in location:
-            d_ones_label = ones_label.cuda()
-            d_zeros_label = zeros_label.cuda()
+            d_ones_label = d_ones_label.cuda()
+            d_zeros_label = d_zeros_label.cuda()
         loss_dis = 0.5 * (loss_binaryCrossEntropy(positive_examples, d_ones_label) +
                           loss_binaryCrossEntropy(negative_examples, d_zeros_label))
         loss_dis.backward(retain_variables=True)
@@ -114,7 +116,11 @@ for epoch in range(num_epochs):
         if i % print_freq == 0:
             print('Epoch: [{0}/{1}][{2}/{3}] loss_gen={4} loss_dis={5}'.format(epoch,
                                                                                num_epochs, i, len(train_loader), loss_gen.data[0], loss_dis.data[0]))
-
+        if (i+1) % decay_freq == 0:    
+            learning_rate /= 2
+            optimizer_G = torch.optim.Adam(generator_G.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
+            optimizer_D = torch.optim.Adam(discriminator_D.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
+            print('upate lr to:', learning_rate)
     out_gen = out_generator_G.cpu().data.numpy()
     cvimg = modelimg2cvimg(out_gen)
     results_path = './data/results'
