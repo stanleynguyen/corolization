@@ -13,22 +13,17 @@ import matplotlib.pyplot as plt
 
 from pix2pix import Discriminator, Generator, weights_init
 from dataset import GANDataset
-from colorutils import tanh_range2uint_color
-
-
-def modelimg2cvimg(img):
-    cvimg = np.array(img[0, :, :, :]).transpose(1, 2, 0)
-    return tanh_range2uint_color(cvimg)
+from colorutils import modelimg2cvimg
 
 
 dset_root = './SUN2012'
 batch_size = 32
 num_epochs = 100
-print_freq = 1
+print_freq = 50
 input_channel = 1
 output_channel = 3
 learning_rate = 0.0001
-decay_freq = 100
+decay_freq = 50
 
 continue_training = False
 location = 'cpu'
@@ -56,8 +51,10 @@ generator_G = Generator(input_channel, output_channel)
 discriminator_D = Discriminator(input_channel, output_channel)
 loss_L1 = nn.L1Loss()
 loss_binaryCrossEntropy = nn.BCELoss()
-optimizer_G = torch.optim.Adam(generator_G.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
-optimizer_D = torch.optim.Adam(discriminator_D.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
+optimizer_G = torch.optim.Adam(generator_G.parameters(
+), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
+optimizer_D = torch.optim.Adam(discriminator_D.parameters(
+), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
 
 if continue_training and os.path.isfile('generator.pkl') and os.path.isfile('discriminator.pkl'):
     generator_G.load_state_dict(torch.load(
@@ -86,8 +83,6 @@ for epoch in range(num_epochs):
             target_var = target_var.cuda()
 
         out_generator_G = generator_G.forward(ip_var)
-        showimg = modelimg2cvimg(out_generator_G.cpu().data.numpy())
-
         optimizer_D.zero_grad()
         negative_examples = discriminator_D.forward(
             ip_var.detach(), out_generator_G.detach())
@@ -116,17 +111,19 @@ for epoch in range(num_epochs):
         if i % print_freq == 0:
             print('Epoch: [{0}/{1}][{2}/{3}] loss_gen={4} loss_dis={5}'.format(epoch,
                                                                                num_epochs, i, len(train_loader), loss_gen.data[0], loss_dis.data[0]))
-        if (i+1) % decay_freq == 0:    
+        if (i+1) % decay_freq == 0:
             learning_rate /= 2
-            optimizer_G = torch.optim.Adam(generator_G.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
-            optimizer_D = torch.optim.Adam(discriminator_D.parameters(), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
+            optimizer_G = torch.optim.Adam(generator_G.parameters(
+            ), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
+            optimizer_D = torch.optim.Adam(discriminator_D.parameters(
+            ), lr=learning_rate, betas=(0.5, 0.999), weight_decay=0.00001)
             print('upate lr to:', learning_rate)
     out_gen = out_generator_G.cpu().data.numpy()
     cvimg = modelimg2cvimg(out_gen)
     results_path = './data/results'
     if not os.path.exists(results_path):
         os.makedirs(results_path)
-    cv2.imwrite('{}/result_epoch{}.jpg'.format(results_path, epoch), cvimg)
+    cv2.imwrite('%s/result_epoch%4d.jpg' % (results_path, epoch), cvimg)
 
     torch.save(generator_G.state_dict(), 'generator.pkl')
     torch.save(discriminator_D.state_dict(), 'discriminator.pkl')

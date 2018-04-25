@@ -127,8 +127,8 @@ class GANDataset(Dataset):
     def __getitem__(self, idx):
         bwimg = imread(self.filenames[idx], as_grey=True)
         realimg = imread(self.filenames[idx])
-        bwimg = resize(bwimg, (256, 256))
-        realimg = resize(realimg, (256, 256))
+        bwimg = resize(bwimg, (256, 256)) * 256
+        realimg = resize(realimg, (256, 256)) * 256
 
         input_img = uint_color2tanh_range(bwimg)
         label_img = uint_color2tanh_range(realimg)

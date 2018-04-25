@@ -78,4 +78,8 @@ def uint_color2tanh_range(img):
 
 
 def tanh_range2uint_color(img):
-    return (img * 128 + 128).astype(np.uint8)
+    return (img * 128.0 + 128.0).astype(np.uint8)
+
+def modelimg2cvimg(img):
+    cvimg = np.array(img[0, :, :, :]).transpose(1, 2, 0)
+    return tanh_range2uint_color(cvimg)
