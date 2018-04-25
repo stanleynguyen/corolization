@@ -47,7 +47,7 @@ This approach tackles the problem of desaturated guesses from precedent CNN atte
 
 In this paper, colorization is treated as a multimodal classification problem. Rather than directly outputting colour values like in other approaches, all possible ab pairs of values are put into 313 different "bins" or categories and converted back to actual colour values during prediction. Training labels are also soft-encoded using the nearest neighbors algorithm based on the colour table shown below.
 
-![colors](pictures/colors.png
+![colors](pictures/colors.png)
 
 We implemented this neural net and achieved a decent result after 47 epochs.
 
@@ -76,7 +76,7 @@ At this point, we discovered yet another problem - the prediction frequently ove
 ![overfitted](pictures/overfit_2.png)
 <br/>_From left to right (input, prediction, actual image)_
 
-### Bring in the big GAN
+### Bring out the big GAN
 
 Needless to say, we are still not very satisfied with the output from the Colorful
 Colorizer. We rethink our approach and hypothesize that a generative approach
@@ -106,7 +106,7 @@ be summed up as below
 For the discriminator, the architecture is straightforward and very much like the
 encoder section of the generator, which can be summed up as below
 
-![pix2pix dis]('./pictures/discriminator.png)
+![pix2pix dis](./pictures/discriminator.png)
 
 The strategy for training this GAN, similar to other generative adversarial
 networks, is a process of alternating between training the discriminator and
@@ -130,6 +130,7 @@ images from grayscales. This is the test results after only 4 epochs on the
 SUN2012 dataset:
 
 ![pix2pix 4epoch](./pictures/pix2pix_4epoch.png)
+<br/>_From left to right (input, prediction, actual image)_
 
 ## Tuning the "hyper-paradio" (hyper-parameters)
 
