@@ -47,7 +47,7 @@ This approach tackles the problem of desaturated guesses from precedent CNN atte
 
 In this paper, colorization is treated as a multimodal classification problem. Rather than directly outputting colour values like in other approaches, all possible ab pairs of values are put into 313 different "bins" or categories and converted back to actual colour values during prediction. Training labels are also soft-encoded using the nearest neighbors algorithm based on the colour table shown below.
 
-![colors](pictures/colors.png)
+![colors](pictures/colors.png
 
 We implemented this neural net and achieved a decent result after 47 epochs.
 
@@ -76,6 +76,61 @@ At this point, we discovered yet another problem - the prediction frequently ove
 ![overfitted](pictures/overfit_2.png)
 <br/>_From left to right (input, prediction, actual image)_
 
+### Bring in the big GAN
+
+Needless to say, we are still not very satisfied with the output from the Colorful
+Colorizer. We rethink our approach and hypothesize that a generative approach
+might be the way to go.
+
+We decided to give [pix2pix](https://arxiv.org/pdf/1611.07004.pdf) model a try. The
+main idea behind pix2pix generative adversarial network, just like other GAN
+approach, is to formulate the problem as a game between a "forger" model and a
+"detector" model where the "forger" would try to generate as realistic image as
+possible while the "detector" would try to segregate fake images from real ones.
+
+Specifically, for the generator, take the input of a b&w image (single channel)
+and reduce it with a series of Convolution + Leaky ReLU blocks into smaller
+representation, which in turn will produce a higher level representation of data
+at the final encoding layer. The decode layers reverse the final encoding back into
+images with Transposed Convolution + Leaky ReLU blocks and finally outputting 3 RGB
+layers. One advantage of this approach is that the "data-massaging" portion
+(for e.g. coverting to LAB colors and extracting different layers) is not needed
+anymore, reducing our data loading time down to half compared to previously.
+"Skip-connections", where endcoded layers are connected (concatenated) together
+with decoded layers, are also utilised to improve the performance of
+image-to-image transformation. The general architecture of pix2pix generator can
+be summed up as below
+
+![pix2pix gen](./pictures/generator.png)
+
+For the discriminator, the architecture is straightforward and very much like the
+encoder section of the generator, which can be summed up as below
+
+![pix2pix dis]('./pictures/discriminator.png)
+
+The strategy for training this GAN, similar to other generative adversarial
+networks, is a process of alternating between training the discriminator and
+generator.
+
+The discriminator will make a guess for each input/target pair of image
+(which is taken from either the ground-truth data or the generated results of the
+generator) and adjusted its weights based on the error rate.
+
+![dis training](./pictures/dis_training.png)
+
+The generator's weights will then be adjusted based on a combination of the
+difference between output vs target image (using L1 loss) and the output of the
+discriminator (using binary cross entropy loss).
+
+![gen training](./pictures/gen_training.png)
+
+This model, living up to our expectation of being "the big gun", yields very good
+results, attaining our set-out goal of producing human-eyes' believable color
+images from grayscales. This is the test results after only 4 epochs on the
+SUN2012 dataset:
+
+![pix2pix 4epoch](./pictures/pix2pix_4epoch.png)
+
 ## Tuning the "hyper-paradio" (hyper-parameters)
 
 We ultilized a specific technique of plotting traning loss for every batch with different learning rates ([reference](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)). We plotted multiple ranges of learning rates and from this best plot of learning rates ranging from 0.1 to 10, found the optimal learning rate for our approach to be approximately 0.5 and incorporated it into our training.
@@ -84,13 +139,21 @@ We ultilized a specific technique of plotting traning loss for every batch with 
 
 ## Further improvements
 
-While our current model yields decent predictions, there is much room for improvement. One such was to introduce Generative Adversarial Networks. The "game" could be formulated such that our current neural net will be the "forger", and an additional network the "detector" which tries to distinguish between an output from the "forger" and the actual image. However, due to time constraints, we did not have a chance to implement this.
+(pending for the slides stuffs on injecting the image classes into the model)
 
 ## Technologies
 
 * [PyTorch](http://pytorch.org/) (An awesome, python-first deep learning framework)
 * [sk-learn](http://scikit-learn.org/) (Our casual friend)
 * [sk-image](http://scikit-image.org/) (Python image magician)
+
+## References
+
+* [Ryan Dahl. "Automatic Colorization". January, 2016](http://tinyclouds.org/colorize/)
+* [Xiao, Jianxiong, James Hays, Krista A. Ehinger, Aude Oliva, and Antonio Torralba. "SUN Database: Large-scale Scene Recognition from Abbey to Zoo." 2010 IEEE Computer Society Conference on Computer Vision and Pattern Recognition, 2010. doi:10.1109/cvpr.2010.5539970.](https://groups.csail.mit.edu/vision/SUN/)
+* [Zhang, Richard, Phillip Isola, and Alexei A. Efros. "Colorful Image Colorization." Computer Vision – ECCV 2016 Lecture Notes in Computer Science, 2016, 649-66. doi:10.1007/978-3-319-46487-9_40.](https://arxiv.org/pdf/1603.08511.pdf)
+* [Isola, Phillip, Jun-Yan Zhu, Tinghui Zhou, and Alexei A. Efros. "Image-to-Image Translation with Conditional Adversarial Networks." 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2017. doi:10.1109/cvpr.2017.632.](https://arxiv.org/pdf/1611.07004.pdf)
+* [Pavel Surmenok. "Estimating an Optimal Learning Rate For a Deep Neural Network". November 13, 2017](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)
 
 ## Team Members
 
