@@ -140,7 +140,24 @@ We ultilized a specific technique of plotting traning loss for every batch with 
 
 ## Further improvements
 
-(pending for the slides stuffs on injecting the image classes into the model)
+An interesting thing that we observe during our exploration and experiments is
+that if we are to train our models on a single class, it would perform
+exceptionally well. For example, our results training solely on the zoo class:
+
+![zoo overfit](pictures/sameclass_zoo_72epochs.png)
+
+As a result, one further improvement that we can make is to account in the image
+class. For our specific dataset - SUN2012, all input images are nicely classified
+beforehand for us hence it would be very easy to take this into the input by
+one-hot encoding these classes and inject into the input. However, that's not
+always the case for general images, so we propose to have another neural network
+train alongside with our colorizer network. This neuralnet will be a classifier,
+separating images into classes, effectively creating "themes" for the colorizer to
+work better. The output from the classifier would then be injected into the
+colorizer. One possible architecture for this approach proposed in a research
+paper:
+
+![parallel learning](pictures/parallel_learning.png)
 
 ## Technologies
 
@@ -155,6 +172,7 @@ We ultilized a specific technique of plotting traning loss for every batch with 
 * [Zhang, Richard, Phillip Isola, and Alexei A. Efros. "Colorful Image Colorization." Computer Vision – ECCV 2016 Lecture Notes in Computer Science, 2016, 649-66. doi:10.1007/978-3-319-46487-9_40.](https://arxiv.org/pdf/1603.08511.pdf)
 * [Isola, Phillip, Jun-Yan Zhu, Tinghui Zhou, and Alexei A. Efros. "Image-to-Image Translation with Conditional Adversarial Networks." 2017 IEEE Conference on Computer Vision and Pattern Recognition (CVPR), 2017. doi:10.1109/cvpr.2017.632.](https://arxiv.org/pdf/1611.07004.pdf)
 * [Pavel Surmenok. "Estimating an Optimal Learning Rate For a Deep Neural Network". November 13, 2017](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)
+* [Satoshi Iizuka, Edgar Simo-Serra, Hiroshi Ishikawa. "Let there be Color!: Joint End-to-end Learning of Global and Local Image Priors for Automatic Image Colorization with Simultaneous Classification". 2016 SIGGRAPH (Special Interest Group on Computer GRAPHics and Interactive Techniques) Conference](http://hi.cs.waseda.ac.jp/~iizuka/projects/colorization/en/)
 
 ## Team Members
 
