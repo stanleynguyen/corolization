@@ -23,7 +23,7 @@ Our first attempt was to use a generator on the black-and-white image input and 
 
 From the example above, we can see that the neural net has learnt a bit to imitate the general shape of the object in the black-and-white image, although the result is far from "comprehensible" by standards of human vision.
 
-We realised that it is quite tedious to train a "from scratch" generator with the black-and-white input to perform decently. It would be more reasonable to leverage on what we already have as input (black-and-white image) and generate the colour layers. This would require using a colour space that has "lightness" as one of its channels, such as HSL, LUV or Lab, so that the neural net can be trained to output the 2 colour layers, and we would just have to concatenate the lightness layer to get the final image. We decided to try out this approach.
+We realised that it is quite tedious to train a "from scratch" generator with the black-and-white input to perform decently. It would be more reasonable to leverage on what we already have as input (black-and-white image) and generate the colour layers. This would require using a colour space that has "lightness" as one of its channels, such as HSL, YUV or Lab, so that the neural net can be trained to output the 2 colour layers, and we would just have to concatenate the lightness layer to get the final image. We decided to try out this approach.
 
 ### The "over-generic" colorizer
 
@@ -76,86 +76,53 @@ At this point, we discovered yet another problem - the prediction frequently ove
 ![overfitted](pictures/overfit_2.png)
 <br/>_From left to right (input, prediction, actual image)_
 
-### Bring out the big GAN
+### Bringing out the big GAN
 
-Needless to say, we are still not very satisfied with the output from the Colorful
-Colorizer. We rethink our approach and hypothesize that a generative approach
-might be the way to go.
+Needless to say, we were still unsatisfied with the results obtained from the Colorful Colorizer. We rethought our approach and hypothesized that a generative approach might be the best way forward. 
 
-We decided to give [pix2pix](https://arxiv.org/pdf/1611.07004.pdf) model a try. The
-main idea behind pix2pix generative adversarial network, just like other GAN
-approach, is to formulate the problem as a game between a "forger" model and a
-"detector" model where the "forger" would try to generate as realistic image as
-possible while the "detector" would try to segregate fake images from real ones.
+We decided to have a go at the [pix2pix](https://arxiv.org/pdf/1611.07004.pdf) model. pix2pix is a Generative Adversarial Network which formulates the problem of pixel mapping as a game between a "forger" and a "detector" model. The forger would generate images as realistic as it possibly can, while the detector would sift out the real from the fake.
 
-Specifically, for the generator, take the input of a b&w image (single channel)
-and reduce it with a series of Convolution + Leaky ReLU blocks into smaller
-representation, which in turn will produce a higher level representation of data
-at the final encoding layer. The decode layers reverse the final encoding back into
-images with Transposed Convolution + Leaky ReLU blocks and finally outputting 3 RGB
-layers. One advantage of this approach is that the "data-massaging" portion
-(for e.g. coverting to LAB colors and extracting different layers) is not needed
-anymore, reducing our data loading time down to half compared to previously.
-"Skip-connections", where endcoded layers are connected (concatenated) together
-with decoded layers, are also utilised to improve the performance of
-image-to-image transformation. The general architecture of pix2pix generator can
-be summed up as below
+Specifically, the generator takes as input a black-and-white image (single channel) and reduces it through a series of convolution and leaky ReLU blocks into smaller representations, which in turn produce a higher-level representation of data at the final encoding layer. The decoding layers reverse the final encoding back into images through transposed convolution and leaky ReLU blocks, finally outputting 3 RGB layers. 
+
+One advantage of this approach is that the "data-messaging" portion (for e.g. converting to Lab colors and extracting different layers) is no longer needed, effectively halving the time needed for data loading. "Skip connections", which concatenate encoded layers to decoded layers, are also utilised to improve the performance of image-to-image transformation. The general architecture of the pix2pix generator is summarised below:
 
 ![pix2pix gen](./pictures/generator.png)
 
-For the discriminator, the architecture is straightforward and very much like the
-encoder section of the generator, which can be summed up as below
+The architecture of the discriminator is straightforward and very much like that of the encoder of the generator:
 
 ![pix2pix dis](./pictures/discriminator.png)
 
-The strategy for training this GAN, similar to other generative adversarial
-networks, is a process of alternating between training the discriminator and
-generator.
+The network is trained in a process that alternates between training the discriminator and generator.
 
-The discriminator will make a guess for each input/target pair of image
-(which is taken from either the ground-truth data or the generated results of the
-generator) and adjusted its weights based on the error rate.
+The discriminator makes a guess for each input/target pair of images taken from either ground-truth data or output from the generator and adjusts its weights based on the error rate.
 
 ![dis training](./pictures/dis_training.png)
 
-The generator's weights will then be adjusted based on a combination of the
-difference between output vs target image (using L1 loss) and the output of the
-discriminator (using binary cross entropy loss).
+The generator's weights are then adjusted based on a combination of the differences between output and target image (using L1 loss) and the output of the discriminator (using binary cross entropy loss).
 
 ![gen training](./pictures/gen_training.png)
 
-This model, living up to our expectation of being "the big gun", yields very good
-results, attaining our set-out goal of producing human-eyes' believable color
-images from grayscales. This is the test results after only 4 epochs on the
-SUN2012 dataset:
+The big gun did not disappoint, producing highly convincing coloured images from grayscale ones. Here are the results after only 4 epochs on the SUN2012 dataset:
 
 ![pix2pix 4epoch](./pictures/pix2pix_4epoch.png)
 <br/>_From left to right (input, prediction, actual image)_
 
 ## Tuning the "hyper-paradio" (hyper-parameters)
 
-We ultilized a specific technique of plotting traning loss for every batch with different learning rates ([reference](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)). We plotted multiple ranges of learning rates and from this best plot of learning rates ranging from 0.1 to 10, found the optimal learning rate for our approach to be approximately 0.5 and incorporated it into our training.
+We utilized a specific technique ([reference](https://towardsdatascience.com/estimating-optimal-learning-rate-for-a-deep-neural-network-ce32f2556ce0)) of plotting training loss for every batch with different learning rates. From several ranges of learning rates, we found a best plot of learning rates ranging from 0.1 to 10, from which we determined our optimal learning rate to be approximately 0.5. 
 
 ![lr plot](pictures/lr_finder_10percent.png)
 
 ## Further improvements
 
-An interesting thing that we observe during our exploration and experiments is
-that if we are to train our models on a single class, it would perform
-exceptionally well. For example, our results training solely on the zoo class:
+One interesting observation during our experiments was that if we were to train our model on a single class, it would perform
+exceptionally well. Here are our results trained only on the zoo class:
 
 ![zoo overfit](pictures/sameclass_zoo_72epochs.png)
 
-As a result, one further improvement that we can make is to account in the image
-class. For our specific dataset - SUN2012, all input images are nicely classified
-beforehand for us hence it would be very easy to take this into the input by
-one-hot encoding these classes and inject into the input. However, that's not
-always the case for general images, so we propose to have another neural network
-train alongside with our colorizer network. This neuralnet will be a classifier,
-separating images into classes, effectively creating "themes" for the colorizer to
-work better. The output from the classifier would then be injected into the
-colorizer. One possible architecture for this approach proposed in a research
-paper:
+Thus a further improvement we propose is to have the model account for image classes. Our specific dataset, the SUN2012, already nicely classifies scenes into hundreds of categories. By one-hot encoding these classes, class information can be easily fed into the input.
+
+However, that is not always the case for other datasets in general. Hence we propose to train another neural network alongside our colorizer network. This network will function as a classifier, sorting scenes into classes, effectively creating "themes" for the colorizer to work better. The output from the classifier would then be injected into the colorizer. One possible architecture for this approach has been proposed by Iizuka, S., Simo-Serra, E. and Ishikawa, H. (2016):
 
 ![parallel learning](pictures/parallel_learning.png)
 
